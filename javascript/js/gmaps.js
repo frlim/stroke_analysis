@@ -55,15 +55,66 @@ function initialize() {
 function responseRACE(e){
   let raceNum = e.code[e.code.length-1];
   linesDIR = dataDIR + "MA_n=100_lines_RACE_"+raceNum+".json";
-  // clear lines on map
-  clearLinesFromMap(linesList);
-  clearLinesReferences();//reset list to empty
-  // draw new lines
   console.log(linesDIR);
   fetch(linesDIR).then(res => res.json()).then(function(data) {
-    createLines(data);});
+    updateLines(data);});
   // only need to add listeners once
   // no need to call highLightLines() again (cause memory leaks)
+}
+
+
+function updateLines(results){
+  // remove old lines if ID is not in here
+  for (var i = 0; i < results.length; i++) {
+    var pointID = results[i].Point.Location;
+    var centerIDsList = [];
+    var preList = new Uint32Array(Object.keys(pointsList[pointID].lines));
+    console.log("old plotted list: "+preList);
+    // console.log(preList);
+    for (var c=0; c < results[i].Point.Centers.length;c++){
+      var centerID = results[i].Point.Centers[c].Center;
+      var weight = results[i].Point.Centers[c].Weight;
+      if (preList.includes(centerID)){
+        console.log("Change line point:"+pointID+" center:"+centerID+" weight to "+weight)
+        pointsList[pointID].lines[centerID].setWeight(weight);
+      }
+      else{
+        // create new obj
+        console.log("Create new line point:"+pointID+" center:"+centerID+" weight of "+weight)
+        var color = results[i].Point.Color;
+        var pLatLng = getPointCoordinates(pointID);
+        var cLatLng = getCenterCoordinates(centerID);
+        var PolylineCoordinates = [pLatLng,cLatLng];
+        var path = new google.maps.Polyline({
+          clickable: true,
+          geodesic: true,
+          path: PolylineCoordinates,
+          strokeColor: color,
+          strokeOpacity: BGOPACITY,
+          strokeWeight: Math.round(weight*20),
+          map:map
+        });
+        var lineObj = new Line(path,centerID,pointID);
+        registerCenter(centerID,lineObj);
+        registerPoint(pointID,lineObj);
+        // linesList.push(lineObj);
+      }
+      centerIDsList.push(centerID);
+    }
+    // find which line not in updated list of points\
+    console.log("center id list: "+centerIDsList);
+    console.log("includes test: "+centerIDsList);
+    centerIDsList = new Uint32Array(centerIDsList);
+    for (var c=0;c<preList.length;c++){
+      var centerID = preList[c];
+      if (!centerIDsList.includes(centerID)){
+        console.log("Delete line point:"+pointID+" center:"+centerID)
+        pointsList[pointID].lines[centerID].path.setMap(null);
+        delete centersList[centerID].lines[pointID];
+        delete pointsList[pointID].lines[centerID];
+      }
+    }
+  }
 }
 
 function createMarkers(results){
@@ -83,22 +134,9 @@ function createMarkers(results){
         icon: icons[0],
         map: map
       });
-      // changeIconOld(marker,icons);
-      var centerObj = {"marker":marker,"CenterType":type,"ID":hKey,"lines":[]};
+      var centerObj = new Center(marker,type,hKey);
       centersList[hKey] = centerObj;
     }
-}
-
-
-function changeIcon(markerObj,icons){
-    markerObj["marker"].addListener('mouseover', function() {
-      if (!markerObj["blockHover"]){
-      markerObj["marker"].setIcon(icons[1]);}
-   });
-   markerObj['marker'].addListener('mouseout', function() {
-     if (!markerObj['blockHover']){
-     markerObj["marker"].setIcon(icons[0]);}
-  });
 }
 
 function createMarkersForPoints(results){
@@ -116,8 +154,7 @@ function createMarkersForPoints(results){
         icon: pointIcons[0],
         map: map
       });
-      var pointObj = {"marker":marker,"ID":pKey,"lines":[],"blockHover":false};
-      // changeIcon(pointObj,pointIcons);
+      var pointObj = new Point(marker,pKey);
       pointsList[pKey] = pointObj;
     }
 }
@@ -134,7 +171,7 @@ function createLines(results){
           var weight = results[i].Point.Centers[c].Weight;
           var cLatLng = getCenterCoordinates(centerID);
           var PolylineCoordinates = [pLatLng,cLatLng];
-          var Path = new google.maps.Polyline({
+          var path = new google.maps.Polyline({
           clickable: true,
           geodesic: true,
           path: PolylineCoordinates,
@@ -143,19 +180,17 @@ function createLines(results){
           strokeWeight: Math.round(weight*20),
           map:map
           });
-          var lineObj = {"Path":Path,"centerID":centerID,"pointID":pointID,
-                      "centerBlockHover":[],
-                      "pointBlockHover":[]}
+          var lineObj = new Line(path,centerID,pointID);
           registerCenter(centerID,lineObj);
           registerPoint(pointID,lineObj);
-          linesList.push(lineObj);
+          // linesList.push(lineObj);
       }
     }
 }
 
 function clearLinesFromMap(lineLists){
   for (var i=0;i<lineLists.length;i++){
-    linesList[i]["Path"].setMap(null);
+    linesList[i].path.setMap(null);
   }
 }
 
@@ -163,10 +198,10 @@ function clearLinesReferences(){
   linesList=[];
   // reset these referrences
   for (const key in pointsList){
-    pointsList[key]['lines']=[];
+    pointsList[key].removeLines();
   }
   for (const key in centersList){
-    centersList[key]['lines']=[];
+    centersList[key].removeLines();
   }
 }
 
@@ -182,40 +217,44 @@ function getCenterCoordinates(centerID){
 }
 
 function registerCenter(centerID,lineObj){
-  centersList[centerID]["lines"].push(lineObj);
+  centersList[centerID].addLine(lineObj);
 }
 
 function registerPoint(pointID,lineObj){
-  pointsList[pointID]["lines"].push(lineObj);
+  pointsList[pointID].addLine(lineObj);
 }
+
 
 function highLightLinesCenters(){
   for (const key in centersList){
     centersList[key]["marker"].addListener("click", function(){
-      console.log("rightclicked on Center "+centersList[key].ID);
-      centersList[key]["blockHover"]=true;
-      var centerIcons= getCenterIconByType(centersList[key].CenterType);
-      pSetHighLight(centersList[key],centerIcons,true,{"turnOnBlockHover":"centerBlockHover"});
+      console.log("clicked on Center "+centersList[key].ID);
+      if (!centersList[key].blockHoverStatus){ // to prevent multi click error
+        // if only not block yet, then highlight and block it
+        centersList[key].highlightOn();
+        centersList[key].blockHover();
+      }
       }
      );
     centersList[key]["marker"].addListener("rightclick", function(){
-      console.log("normalclick on Center"+centersList[key].ID);
-      centersList[key]["blockHover"]=false;
-      var centerIcons= getCenterIconByType(centersList[key].CenterType);
-      pSetHighLight(centersList[key],centerIcons,false,{"releaseBlockHover":"centerBlockHover"});
+      console.log("right-clicked on Center"+centersList[key].ID);
+      if (centersList[key].blockHoverStatus){
+        centersList[key].unblockHover();
+        centersList[key].highlightOff();
+        }
       }
     );
     centersList[key]["marker"].addListener("mouseover", function(){
       console.log("mouseover on Center "+centersList[key].ID);
-      var centerIcons= getCenterIconByType(centersList[key].CenterType);
-      if (!centersList[key]["blockHover"]){
-          pSetHighLight(centersList[key],centerIcons,true,{"checkHover":true});}
+      if (!centersList[key].blockHoverStatus){
+          centersList[key].highlightOn();
+        }
     });
     centersList[key]["marker"].addListener("mouseout", function(){
       console.log("mouseout on Center "+centersList[key].ID);
-      var centerIcons= getCenterIconByType(centersList[key].CenterType);
-      if (!centersList[key]["blockHover"]){
-      pSetHighLight(centersList[key],centerIcons,false,{"checkHover":true});}
+      if (!centersList[key].blockHoverStatus){
+          centersList[key].highlightOff();
+        }
     });
   }
 }
@@ -223,80 +262,194 @@ function highLightLinesCenters(){
 function highLightLinesPoints(){
   for (const key in pointsList){
     pointsList[key]["marker"].addListener("click", function(){
-      console.log("rightclicked")
-      // pointsList[key]["marker"].setIcon(pointIcons[1]);
-      pointsList[key]["blockHover"]=true;
-      pSetHighLight(pointsList[key],pointIcons,true,{"turnOnBlockHover":"pointBlockHover"});
+      console.log("clicked on Center "+pointsList[key].ID);
+      if (!pointsList[key].blockHoverStatus){ // to prevent multi click error
+        // if only not block yet, then highlight and block it
+        pointsList[key].highlightOn();
+        pointsList[key].blockHover();
+        }
       }
      );
     pointsList[key]["marker"].addListener("rightclick", function(){
-      console.log("normalclick")
-      // pointsList[key]["marker"].setIcon(pointIcons[0]);
-      pointsList[key]["blockHover"]=false;
-      pSetHighLight(pointsList[key],pointIcons,false,{"releaseBlockHover":"pointBlockHover"});
+      console.log("right-clicked on Center"+pointsList[key].ID);
+      if (pointsList[key].blockHoverStatus){
+        pointsList[key].unblockHover();
+        pointsList[key].highlightOff();
+        }
       }
     );
     pointsList[key]["marker"].addListener("mouseover", function(){
-      console.log("mouseover")
-        if (!pointsList[key]["blockHover"]){
-          pSetHighLight(pointsList[key],pointIcons,true,{"checkHover":true});}
+      console.log("mouseover on Center "+pointsList[key].ID);
+      if (!pointsList[key].blockHoverStatus){
+          pointsList[key].highlightOn();
+        }
     });
     pointsList[key]["marker"].addListener("mouseout", function(){
-      console.log("mouseout");
-      if (!pointsList[key]["blockHover"]){
-      pSetHighLight(pointsList[key],pointIcons,false,{"checkHover":true});}
+      console.log("mouseout on Center "+pointsList[key].ID);
+      if (!pointsList[key].blockHoverStatus){
+          pointsList[key].highlightOff();
+        }
     });
   }
 }
 
-function pSetHighLight(pointObj,icons,toogleHighlight,options){
-  // default optional parameters in JS
-  var checkHover = options.checkHover || false;
-  var releaseBlockHover = options.releaseBlockHover || 'none';
-  var turnOnBlockHover = options.turnOnBlockHover || 'none';
-
-  //checkHover must equal false to activate the 2 final feature
-  if (checkHover){
-    releaseBlockHover='none';
-    turnOnBlockHover='none';
+class Center {
+  constructor(marker,type,ID){
+    this.marker=marker;
+    this.type=type;
+    this.ID = ID;
+    this.lines={};
+    this.highlight=false;
+    this.blockHoverStatus=false;
   }
-  console.log('releaseBlockHover is ' + releaseBlockHover);
-  console.log('turnOnBlockHover is ' + turnOnBlockHover);
-  if (releaseBlockHover!='none' && turnOnBlockHover!='none'){
-    throw 'Either releaseBlockHover or turnOnBlockHover (or both) needs to be none ';
+  addLine(lineObj){
+    this.lines[lineObj.pointID]=lineObj;
   }
-
-  if (toogleHighlight){
-    icon = icons[1];
-    strokeOpacity = FULLOPACITY;
-  } else{
-    icon = icons[0];
-    strokeOpacity = BGOPACITY;
+  removeLines(){
+    this.lines={};
   }
-  pointObj["marker"].setIcon(icon);
-  for (var l=0; l < pointObj["lines"].length; l++){
-      var lineObj = pointObj["lines"][l];
-      if (releaseBlockHover !='none') {
-        pointObj["lines"][l][releaseBlockHover].splice(pointObj["lines"][l][releaseBlockHover].indexOf(pointObj.ID),1);}
-      if (turnOnBlockHover !='none') {
-        // if id already exist then dont add again
-        if (pointObj["lines"][l][turnOnBlockHover].indexOf(pointObj.ID) <=-1){
-        pointObj["lines"][l][turnOnBlockHover].push(pointObj.ID);}
-      }
-      var changeOpacity = lineObj["centerBlockHover"].length==0 && lineObj["pointBlockHover"].length==0;
-
-      // if (checkHover){
-      //   changeOpacity = lineObj["centerBlockHover"].length==0 && lineObj["pointBlockHover"].length==0;
-      console.log("info below -- line for point:" + lineObj["pointID"] + " center:"+lineObj["centerID"]);
-
-      console.log("centerBlockHover is "+lineObj["centerBlockHover"]);
-      console.log("pointBlockHover is "+lineObj["pointBlockHover"]);
-      //   console.log("should change?" +changeOpacity)
-      // }
-
-      if (changeOpacity){
-        lineObj["Path"].setOptions({
-          strokeOpacity:strokeOpacity});
-      }
+  highlightOn(){
+    this.highlight=true;
+    // changeicon
+    this.marker.setIcon(getCenterIconByType(this.type)[1]);
+    // highlight lines;
+    for (const l in this.lines){
+      var line = this.lines[l];
+      // if not on, set on
+      if (!line.highlightStatus){ line.highlightOn();}
     }
+  }
+  highlightOff(){
+    this.highlight=false;
+    // changeicon
+    this.marker.setIcon(getCenterIconByType(this.type)[0]);
+    // highlight lines;
+    for (const l in this.lines){
+      var line = this.lines[l];
+      // if there are no block then set highlight off
+      if (!line.anyBlock){ line.highlightOff();}
+    }
+  }
+  blockHover(){
+    for (const l in this.lines){
+      var line = this.lines[l];
+      line.addCenterBlock(this.ID);
+    }
+    this.blockHoverStatus=true;
+  }
+  unblockHover(){
+    for (const l in this.lines){
+      var line = this.lines[l];
+      line.removeCenterBlock(this.ID);
+    }
+    this.blockHoverStatus=false;
+  }
+  get linesStuff(){
+    console.log('get lineStuff')
+    return this.lines;
+  }
+}
+
+class Point {
+  constructor(marker,ID){
+    this.marker=marker;
+    this.ID = ID;
+    this.lines={};
+    this.highlight=false;
+    this.blockHoverStatus=false;
+  }
+  addLine(lineObj){
+    this.lines[lineObj.centerID]=lineObj;
+  }
+  removeLines(){
+    this.lines={};
+  }
+  highlightOn(){
+    this.highlight=true;
+    // changeicon
+    this.marker.setIcon(pointIcons[1]);
+    // highlight lines;
+    for (const l in this.lines){
+      var line = this.lines[l];
+      // if not on, set on
+      if (!line.highlight){ line.highlightOn();}
+    }
+  }
+  highlightOff(){
+    this.highlight=false;
+    // changeicon
+    this.marker.setIcon(pointIcons[0]);
+    // highlight lines;
+    for (const l in this.lines){
+      var line = this.lines[l];
+      // if there are no block then set highlight off
+      if (!line.anyBlock){ line.highlightOff();}
+    }
+  }
+  blockHover(){
+    for (const l in this.lines){
+      var line = this.lines[l];
+      line.addCenterBlock(this.ID);
+    }
+    this.blockHoverStatus=true;
+  }
+  unblockHover(){
+    for (const l in this.lines){
+      var line = this.lines[l];
+      line.removeCenterBlock(this.ID);
+    }
+    this.blockHoverStatus=false;
+  }
+  get linesStuff(){
+    console.log('get lineStuff')
+    return this.lines;
+  }
+}
+
+class Line {
+  constructor(path,centerID,pointID){
+    this.path = path;
+    this.centerID = centerID;
+    this.pointID = pointID;
+    this.centerBlockHover = [];
+    this.pointBlockHover = [];
+    this.highlightStatus=false;
+  }
+  registerCenter(center){
+    this.center=center;
+  }
+  registerPoint(point){
+    this.point=point;
+  }
+  addPointBlock(pointID){
+    this.pointBlockHover.push(pointID);
+  }
+  addCenterBlock(centerID){
+    this.centerBlockHover.push(centerID);
+  }
+  removePointBlock(pointID){
+    this.pointBlockHover.splice(this.pointBlockHover.indexOf(pointID),1);
+  }
+  removeCenterBlock(centerID){
+    this.centerBlockHover.splice(this.centerBlockHover.indexOf(centerID),1);
+  }
+  highlightOn(){
+    this.path.setOptions({
+      "strokeOpacity":FULLOPACITY
+    });
+  }
+  highlightOff(){
+    this.path.setOptions({
+      "strokeOpacity":BGOPACITY
+    });
+  }
+  get anyBlock(){
+    return (this.pointBlockHover.length>0) || (this.centerBlockHover.length>0);
+  }
+  setWeight(weight){
+    var strokeWeight = Math.round(weight*20);
+    this.path.setOptions({
+      "strokeWeight":strokeWeight
+    });
+  }
 }
