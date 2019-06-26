@@ -1,6 +1,7 @@
 var map;
 var centersList;
 var pointsList;
+var linesList;
 const BGOPACITY = 0.09;
 const FULLOPACITY = 0.8;
 
@@ -21,8 +22,14 @@ function getCenterIconByType(centerType){
   }
 }
 
+dataDIR='./data_js/';
+var centersDIR = dataDIR + 'MA_n=100_centers.json';
+var pointsDIR = dataDIR + 'MA_n=100_points.json';
+var linesDIR = dataDIR + 'MA_n=100_lines_RACE_0.json';
+
 
 function initialize() {
+  // var newMap = typeof newMap !== 'undefined' ? newMap : true;
   var centerlatlng = new google.maps.LatLng(42.258383, -71.654742);
   var myOptions = {
     zoom: 7,
@@ -30,30 +37,33 @@ function initialize() {
     mapTypeId: google.maps.MapTypeId.ROADMAP
   };
   map = new google.maps.Map(document.getElementById("map"), myOptions);
-  // Create a <script> tag and set the JS-json script as soource
-  var script = document.createElement('script');
-  // Json script micmicing Google's example
-  // https://developers.google.com/maps/documentation/javascript/earthquakes
-  script.src = 'MA_n=100_points.js';
-  document.getElementsByTagName('head')[0].appendChild(script);
-
-  // Create a <script> tag and set the JS-json script as soource
-  var script = document.createElement('script');
-  // Json script micmicing Google's example
-  // https://developers.google.com/maps/documentation/javascript/earthquakes
-  script.src = 'MA_n=100_centers.js';
-  document.getElementsByTagName('head')[0].appendChild(script);
-
-  // Create a <script> tag and set the JS-json script as soource
-  var script = document.createElement('script');
-  // Json script micmicing Google's example
-  // https://developers.google.com/maps/documentation/javascript/earthquakes
-  script.src = 'MA_n=100_lines.js';
-  document.getElementsByTagName('head')[0].appendChild(script);
-
 
   centersList={};
   pointsList={};
+  linesList=[];
+
+  fetch(pointsDIR).then(res => res.json()).then(data => createMarkersForPoints(data));
+  fetch(centersDIR).then(res => res.json()).then(data => createMarkers(data));
+  fetch(linesDIR).then(res => res.json()).then(function(data) {
+    createLines(data);
+    highLightLinesPoints();
+    highLightLinesCenters();});
+
+  document.addEventListener('keypress', responseRACE);
+}
+
+function responseRACE(e){
+  let raceNum = e.code[e.code.length-1];
+  linesDIR = dataDIR + "MA_n=100_lines_RACE_"+raceNum+".json";
+  // clear lines on map
+  clearLinesFromMap(linesList);
+  clearLinesReferences();//reset list to empty
+  // draw new lines
+  console.log(linesDIR);
+  fetch(linesDIR).then(res => res.json()).then(function(data) {
+    createLines(data);});
+  // only need to add listeners once
+  // no need to call highLightLines() again (cause memory leaks)
 }
 
 function createMarkers(results){
@@ -89,42 +99,6 @@ function changeIcon(markerObj,icons){
      if (!markerObj['blockHover']){
      markerObj["marker"].setIcon(icons[0]);}
   });
-}
-
-function changeIconOld(marker,icons){
-    marker.addListener('mouseover', function() {
-      marker.setIcon(icons[1]);
-   });
-   marker.addListener('mouseout', function() {
-     marker.setIcon(icons[0]);
-  });
-}
-
-
-function createCircles(results){
-    // Loop through the results array and place a marker for each
-  // set of coordinates.
-    for (var i = 0; i < results.length; i++) {
-      var lat = results[i].Latitude;
-      var long = results[i].Longitude;
-      var latLng = new google.maps.LatLng(lat,long);
-      var radius = 600;
-      var pKey = results[i].ID;
-      var name = "ID " + pKey.toString();
-      var circle = new google.maps.Circle({
-          title: name,
-          strokeColor: '#008000',
-          strokeOpacity: 1.0,
-          strokeWeight: 1.0,
-          fillColor: '#008000',
-          fillOpacity: 0.3,
-          map: map,
-          center: latLng,
-          radius: radius
-        });
-      var pointObj = {"circle":circle,"ID":pKey,"lines":[],"blockHover":false};
-      pointsList[pKey] = pointObj;
-    }
 }
 
 function createMarkersForPoints(results){
@@ -174,8 +148,26 @@ function createLines(results){
                       "pointBlockHover":[]}
           registerCenter(centerID,lineObj);
           registerPoint(pointID,lineObj);
+          linesList.push(lineObj);
       }
     }
+}
+
+function clearLinesFromMap(lineLists){
+  for (var i=0;i<lineLists.length;i++){
+    linesList[i]["Path"].setMap(null);
+  }
+}
+
+function clearLinesReferences(){
+  linesList=[];
+  // reset these referrences
+  for (const key in pointsList){
+    pointsList[key]['lines']=[];
+  }
+  for (const key in centersList){
+    centersList[key]['lines']=[];
+  }
 }
 
 

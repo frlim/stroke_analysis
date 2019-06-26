@@ -5,21 +5,25 @@ import xlwings as xw
 import json
 
 file_path = Path('Z:\\stroke_data\\')
+stroke_location_path = Path('C:\\Users\\hqt2102\\OneDrive - cumc.columbia.edu\\Stroke\\stroke_locations')
+out_path = Path.cwd()/'javascript/data_js'
+stroke_path = Path('C:\\Users\\hqt2102\\OneDrive - cumc.columbia.edu\\Stroke\\patrick_stroke')
+
 
 MA_hospitals_latlong= pd.read_csv(file_path/'inner_join_siteID.csv',sep='|')
 # MA_hospitals_latlong.to_json(file_path/'MA_hopsitals_latlong.json',orient='records')
 
-points = pd.read_csv('data/points/MA_n=100.csv')
+points = pd.read_csv(stroke_location_path/'data/points/MA_n=100.csv')
 points.index.name='ID'
 points.reset_index(inplace=True)
-points_color = pd.read_csv('output/maps/sexmale_age70.0_race8.0_symptom50.0_points_colors.csv')
+points_color = pd.read_csv(stroke_location_path/'output/maps/sexmale_age70.0_race8.0_symptom50.0_points_colors.csv')
 points_color.drop('ID',axis=1,inplace=True)
 points_w_color = points.merge(points_color,on=['Latitude','Longitude'])
-points_w_color.to_json(file_path/'MA_n=100_points.js',orient='records')
+# points_w_color.to_json(out_path/'MA_n=100_points.js',orient='records')
 
 # get output of stroke_model
-output_path = Path('C:\\Users\\hqt2102\\OneDrive - cumc.columbia.edu\\Stroke\\patrick_stroke\\output')
-out_fname = 'times=MA_n=100_hospitals=MA_n=100_male_after_AHAdata.csv'
+output_path = stroke_path/'output'
+out_fname = 'times=MA_n=100_hospitals=MA_n=100_random_male_RACE_2.csv'
 model_output = pd.read_csv(output_path/out_fname)
 # group model output by patient profiles
 output_groups = model_output.groupby(['Sex','Age','Symptoms','RACE'])
@@ -33,7 +37,7 @@ hosp_key = sheet['A1:C275'].options(convert=pd.DataFrame,index=False,header=True
 centers = MA_hospitals_latlong.merge(hosp_key,on='AHA_ID',how='left',indicator=True)
 
 centers_for_json=centers[['HOSP_KEY','Latitude','Longitude','CenterType','transfer_time','destinationID']]
-centers_for_json.to_json(file_path/'MA_n=100_centers.js',orient='records')
+# centers_for_json.to_json(out_path/'MA_n=100_centers.js',orient='records')
 
 points= points_w_color
 out_list=[]
@@ -62,7 +66,11 @@ for p_idx,row in points.iterrows():
     out_list.append({"Point":{"Location":row["ID"],"Centers":centers_at_point,"Color":color}})
 
 
-json.dumps(out_list)
-out_dict
-pd.DataFrame.from_dict(out_dict)
-weight
+json_str=json.dumps(out_list)
+file = open(out_path/'MA_n=100_lines_RACE_2.js','w+')
+file.write('createLines(')
+file.write(json_str)
+file.write(');\n')
+file.write('highLightLinesPoints();\n')
+file.write('highLightLinesCenters();')
+file.close()
