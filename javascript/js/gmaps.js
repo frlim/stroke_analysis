@@ -27,17 +27,96 @@ var dataDIR='./data_js/';
 var centersDIR = dataDIR + 'MA_n=100_centers.json';
 var pointsDIR = dataDIR + 'MA_n=100_points.json';
 var linesDIR = dataDIR + 'MA_n=100_lines_RACE_0_s=20000.json';
+// { "color": "#ededed" },
+var mapStyles = {
+  "default":null,
+  "hide":[
+        {
+          "featureType": "all",
+          "stylers": [
+            { "visibility": "off" }
+          ]
+        },
+        {
+          "featureType": "landscape.natural",
+          "stylers": [
+            { "visibility": "on" },
+            { "color": "#ededed" }
+          ]
+        },
+        {
+          "featureType": "road.highway",
+          "elementType":"geometry",
+          "stylers": [
+            { "visibility": "on" },
+            { "color": "#e1e1e1" }
+          ]
+        }
+      ]
+}
 
+var latLngBounds = {
+  east:-69.769533,
+  north:42.961923,
+  south:41.409692,
+  west:-73.464296,
+}
+
+
+var ageInput= document.getElementById('age-input');
+var raceInput = document.getElementById('race-input');
+var symptomInput = document.getElementById('symptom-input');
+var maleInput = document.getElementById('male-selector');
+var femaleInput = document.getElementById('female-selector');
 
 function initialize() {
   // var newMap = typeof newMap !== 'undefined' ? newMap : true;
   var centerlatlng = new google.maps.LatLng(42.258383, -71.654742);
   var myOptions = {
-    zoom: 7,
+    zoom: 9,
+    minZoom:9,
+    maxZoom:14,
     center: centerlatlng,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
+    // mapTypeId: google.maps.MapTypeId.ROADMAP,
+    mapTypeControl: false,
+    styles:mapStyles['hide'],
+    restriction:{
+      latLngBounds:latLngBounds
+    },
+    streetViewControl: false
   };
   map = new google.maps.Map(document.getElementById("map"), myOptions);
+
+  // Add controls to the map, allowing users to hide/show features.
+  var styleControl = document.getElementById('style-selector-control');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(styleControl);
+
+  var sexSelector = document.getElementById('sex-selector');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(sexSelector);
+
+  var ageForm = document.getElementById('age-form');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(ageForm);
+
+  var raceForm = document.getElementById('race-form');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(raceForm);
+
+  var symptomForm = document.getElementById('symptom-form');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(symptomForm);
+
+  maleInput.addEventListener('click',responseChange);
+  femaleInput.addEventListener('click',responseChange);
+  ageInput.addEventListener('change',responseChange);
+  raceInput.addEventListener('change',responseChange);
+  symptomInput.addEventListener('change',responseChange);
+
+  // for the user to choose to hide/show features
+  document.getElementById('hide-poi').addEventListener('click', function() {
+    map.setOptions({styles: mapStyles['hide']});
+  });
+  document.getElementById('show-poi').addEventListener('click', function() {
+    map.setOptions({styles: mapStyles['default']});
+  });
+  document.getElementById('race-input').addEventListener('change', responseRACE);
 
   centersList={};
   pointsList={};
@@ -49,19 +128,37 @@ function initialize() {
     createLines(data);
     highLightLinesPoints();
     highLightLinesCenters();});
-
-  document.addEventListener('keypress', responseRACE);
 }
 
+var oldRaceNum = 0;
 function responseRACE(e){
-  let raceNum = e.code[e.code.length-1];
+  let raceNum = e.srcElement.value;
+  // if raceNum is out of range, reject and put in previous value
+  if (raceNum > 9 || raceNum <0 ){
+    document.getElementById('race-input').value = oldRaceNum;
+    return}
   linesDIR = dataDIR + "MA_n=100_lines_RACE_"+raceNum+"_s=20000.json";
   console.log(linesDIR);
   fetch(linesDIR).then(res => res.json()).then(function(data) {
     updateLines(data);});
   // only need to add listeners once
   // no need to call highLightLines() again (cause memory leaks)
+  oldRaceNum = raceNum;
 }
+
+function responseChange(){
+  var sex;
+  if (maleInput.checked){
+    sex='male';
+  } else {
+    sex='female';
+  }
+  var age = ageInput.value;
+  var race = raceInput.value;
+  var symptom = symptomInput.value;
+  console.log('sex:'+sex+' age:'+age+' RACE:'+race+' Symptom:'+symptom)
+}
+
 
 function createMarkers(results){
     // Loop through the results array and place a marker for each
@@ -148,7 +245,7 @@ function createDash(comColor){
       path: 'M 0,-1 0,1',
       strokeOpacity: 1,
       strokeColor: comColor,
-      scale: 3,
+      scale: 2,
     };
     return lineSymbol;
 }
@@ -516,7 +613,7 @@ class Line {
       this.path.setOptions({"icons": [{
               icon: this.lineSymbol,
               offset: '0',
-              repeat: '10px'
+              repeat: '12px'
       }]});
     }
   }
@@ -530,7 +627,7 @@ class Line {
       this.path.setOptions({"icons": [{
               icon: this.lineSymbol,
               offset: '0',
-              repeat: '10px'
+              repeat: '12px'
       }]});
     }
   }
