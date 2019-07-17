@@ -4,21 +4,57 @@
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1.0">
     <title>Stroke Output</title>
-    <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-      #map {
-        height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
   </head>
   <body>
+    <script type="text/javascript" src="js/input.js"></script>
+    <div id="style-selector-control" class="map-control">
+      <input type="radio" name="show-hide" id="hide-poi"
+          class="selector-control" checked="checked">
+      <label for="hide-poi">Hide</label>
+      <input type="radio" name="show-hide" id="show-poi"
+          class="selector-control">
+      <label for="show-poi">Show</label>
+    </div>
+    <div id="sex-selector" class="map-control">
+      <input type="radio" name="sex" id="male-selector"
+          class="selector-control" checked="checked">
+      <label for="male-selector">M</label>
+      <input type="radio" name="sex" id="female-selector"
+          class="selector-control">
+      <label for="female-selector">F</label>
+    </div>
+    <div id="age-form" class="map-control">
+      <label for="age-input">Age</label>
+      <input type="number" min="65" max="100" step="5" value="65" id="age-input" name="age-input">
+    </div>
+    <div id="race-form" class="map-control">
+      <label for="race-input">RACE(0-9)</label>
+      <input type="number" min="0" max="9" value="0" id="race-input" name="race-input">
+    </div>
+    <div id="symptom-form" class="map-control">
+      <label for="symptom-input">Min since symptoms</label>
+      <input type="number" min="10" max="100" step="10" value="10" id="symptom-input" name="symptom-input">
+    </div>
+    <div id="infowindow-selector" class="map-control">
+      <label for="infowindow-selector">Location IDs</label>
+      <input type="radio" name="infowindow" id="open-selector"
+          class="selector-control">
+      <label for="open-selector">On</label>
+      <input type="radio" name="infowindow" id="close-selector"
+          class="selector-control" checked="checked">
+      <label for="close-selector">Off</label>
+      <label for="loc-input" style="padding-left:10px">Find</label>
+      <input type="number" min="0" max="100" step="1" placeholder="Enter ID" id="loc-input" name="loc-input">
+    </div>
+    <div id="version-selector" class="map-control">
+      <input type="radio" name="version" id="before-selector"
+          class="selector-control" checked="checked">
+      <label for="before-selector">BE</label>
+      <input type="radio" name="version" id="after-selector"
+          class="selector-control">
+      <label for="after-selector">AF</label>
+    </div>
     <div id="map"></div>
     <script type="text/javascript" src="js/gmaps.js"></script>
       <!--Load the API from the specified URL
