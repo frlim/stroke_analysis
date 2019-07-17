@@ -23,10 +23,24 @@ function getCenterIconByType(centerType){
   }
 }
 
+
+function getCenterIconByTypeWithText(centerType,text){
+  if (centerType != 'Primary'){
+    var icon1 = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+text+"|7faeff";
+    var icon2 = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+text+"|1135ff|f9f9f9";
+    return [icon1,icon2];
+  }
+  else {
+    var icon1 = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+text+"|ffb3ad";
+    var icon2 = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+text+"|fc2411";
+    return [icon1,icon2];
+  }
+}
+
 var dataDIR='./data_js/';
 var centersDIR = dataDIR + 'MA_n=100_centers.json';
 var pointsDIR = dataDIR + 'MA_n=100_points.json';
-var linesDIR = dataDIR + 'MA_n=100_lines_RACE_0_s=20000.json';
+var linesDIR = dataDIR + "times=MA_n=100_hospitals=MA_n=100_sex=male_age=65_race=0_symptom=10_nsim=auto_beAHA.json";
 // { "color": "#ededed" },
 var mapStyles = {
   "default":null,
@@ -68,6 +82,8 @@ var raceInput = document.getElementById('race-input');
 var symptomInput = document.getElementById('symptom-input');
 var maleInput = document.getElementById('male-selector');
 var femaleInput = document.getElementById('female-selector');
+var locInput = document.getElementById('loc-input');
+var afterInput = document.getElementById('after-selector');
 
 function initialize() {
   // var newMap = typeof newMap !== 'undefined' ? newMap : true;
@@ -103,11 +119,20 @@ function initialize() {
   var symptomForm = document.getElementById('symptom-form');
   map.controls[google.maps.ControlPosition.TOP_LEFT].push(symptomForm);
 
+  var infoWindowSelector = document.getElementById('infowindow-selector');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(infoWindowSelector);
+
+  var versionSelector = document.getElementById('version-selector');
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(versionSelector);
+
   maleInput.addEventListener('click',responseChange);
   femaleInput.addEventListener('click',responseChange);
   ageInput.addEventListener('change',responseChange);
   raceInput.addEventListener('change',responseChange);
   symptomInput.addEventListener('change',responseChange);
+  locInput.addEventListener('change',openInfoWindow);
+  document.getElementById('before-selector').addEventListener('click',responseChange);
+  document.getElementById('after-selector').addEventListener('click',responseChange);
 
   // for the user to choose to hide/show features
   document.getElementById('hide-poi').addEventListener('click', function() {
@@ -116,7 +141,9 @@ function initialize() {
   document.getElementById('show-poi').addEventListener('click', function() {
     map.setOptions({styles: mapStyles['default']});
   });
-  document.getElementById('race-input').addEventListener('change', responseRACE);
+  // document.getElementById('race-input').addEventListener('change', responseRACE);
+  document.getElementById('open-selector').addEventListener('click',openAllInfoWindow);
+  document.getElementById('close-selector').addEventListener('click',closeAllInfoWindow);
 
   centersList={};
   pointsList={};
@@ -130,21 +157,21 @@ function initialize() {
     highLightLinesCenters();});
 }
 
-var oldRaceNum = 0;
-function responseRACE(e){
-  let raceNum = e.srcElement.value;
-  // if raceNum is out of range, reject and put in previous value
-  if (raceNum > 9 || raceNum <0 ){
-    document.getElementById('race-input').value = oldRaceNum;
-    return}
-  linesDIR = dataDIR + "MA_n=100_lines_RACE_"+raceNum+"_s=20000.json";
-  console.log(linesDIR);
-  fetch(linesDIR).then(res => res.json()).then(function(data) {
-    updateLines(data);});
-  // only need to add listeners once
-  // no need to call highLightLines() again (cause memory leaks)
-  oldRaceNum = raceNum;
-}
+// var oldRaceNum = 0;
+// function responseRACE(e){
+//   let raceNum = e.srcElement.value;
+//   // if raceNum is out of range, reject and put in previous value
+//   if (raceNum > 9 || raceNum <0 ){
+//     document.getElementById('race-input').value = oldRaceNum;
+//     return}
+//   linesDIR = dataDIR + "times=MA_n=100_hospitals=MA_n=100_sex=male_age=65_race="+raceNum+"_symptom=10_nsim=auto_afAHA.json";
+//   console.log(linesDIR);
+//   fetch(linesDIR).then(res => res.json()).then(function(data) {
+//     updateLines(data);});
+//   // only need to add listeners once
+//   // no need to call highLightLines() again (cause memory leaks)
+//   oldRaceNum = raceNum;
+// }
 
 function responseChange(){
   var sex;
@@ -156,7 +183,40 @@ function responseChange(){
   var age = ageInput.value;
   var race = raceInput.value;
   var symptom = symptomInput.value;
-  console.log('sex:'+sex+' age:'+age+' RACE:'+race+' Symptom:'+symptom)
+  var version;
+  if (afterInput.checked){
+    version="afAHA";
+  } else {
+    version = "beAHA";
+  }
+  linesDIR= dataDIR + "times=MA_n=100_hospitals=MA_n=100_sex="+sex+"_age="+age+"_race="+race+"_symptom="+symptom+"_nsim=auto_"+version+".json";
+  console.log(linesDIR);
+  fetch(linesDIR).then(res => res.json()).then(function(data) {
+    updateLines(data);});
+}
+
+function openAllInfoWindow(){
+  for (var pointID in pointsList){
+    var pointObj = pointsList[pointID];
+    // console.log('open all info window');
+    pointObj.infowindow.open(map,pointObj.marker);
+  }
+}
+
+function openInfoWindow(){
+  var loc = locInput.value;
+  var pointObj = pointsList[loc];
+  pointObj.infowindow.open(map,pointObj.marker);
+  pointObj.highlightOn();
+  pointObj.blockHover();
+}
+
+
+function closeAllInfoWindow(){
+  for (var pointID in pointsList){
+    var pointObj = pointsList[pointID];
+    pointObj.infowindow.close();
+  }
 }
 
 
@@ -170,9 +230,9 @@ function createMarkers(results){
       var hKey = results[i].HOSP_KEY;
       var name = "HOSP_KEY " + hKey.toString();
       var type = results[i].CenterType;
-      var icons= getCenterIconByType(results[i].CenterType);
+      var icons= getCenterIconByTypeWithText(results[i].CenterType,hKey.toString());
       var marker = new google.maps.Marker({
-        title: name.toString(),
+        // title: name.toString(),
         position: latLng,
         icon: icons[0],
         map: map
@@ -192,7 +252,7 @@ function createMarkersForPoints(results){
       var pKey = results[i].ID;
       var name = "ID " + pKey.toString();
       var marker = new google.maps.Marker({
-        title: name.toString(),
+        // title: name.toString(),
         position: latLng,
         icon: pointIcons[0],
         map: map
@@ -451,7 +511,7 @@ class Center {
   highlightOn(){
     this.highlightStatus=true;
     // changeicon
-    this.marker.setIcon(getCenterIconByType(this.type)[1]);
+    this.marker.setIcon(getCenterIconByTypeWithText(this.type,this.ID.toString())[1]);
     // highlight lines;
     for (const l in this.lines){
       var line = this.lines[l];
@@ -461,7 +521,7 @@ class Center {
   highlightOff(){
     this.highlightStatus=false;
     // changeicon
-    this.marker.setIcon(getCenterIconByType(this.type)[0]);
+    this.marker.setIcon(getCenterIconByTypeWithText(this.type,this.ID.toString())[0]);
     // highlight lines;
     for (const l in this.lines){
       var line = this.lines[l];
@@ -501,6 +561,7 @@ class Point {
     this.lines={};
     this.highlightStatus=false;
     this.blockHoverStatus=false;
+    this.infowindow = new google.maps.InfoWindow({content:this.ID.toString()});
   }
   addLine(lineObj){
     this.lines[lineObj.centerID]=lineObj;
@@ -512,6 +573,8 @@ class Point {
     this.highlightStatus=true;
     // changeicon
     this.marker.setIcon(pointIcons[1]);
+    // open info window
+    this.infowindow.open(map,this.marker);
     // highlight lines;
     for (const l in this.lines){
       var line = this.lines[l];
@@ -523,6 +586,8 @@ class Point {
     this.highlightStatus=false;
     // changeicon
     this.marker.setIcon(pointIcons[0]);
+    // close info window
+    this.infowindow.close();
     // highlight lines;
     for (const l in this.lines){
       var line = this.lines[l];

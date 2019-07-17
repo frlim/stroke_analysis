@@ -19,14 +19,14 @@
     <div id="sex-selector" class="map-control">
       <input type="radio" name="sex" id="male-selector"
           class="selector-control" checked="checked">
-      <label for="hide-poi">M</label>
+      <label for="male-selector">M</label>
       <input type="radio" name="sex" id="female-selector"
           class="selector-control">
-      <label for="show-poi">F</label>
+      <label for="female-selector">F</label>
     </div>
     <div id="age-form" class="map-control">
       <label for="age-input">Age</label>
-      <input type="number" min="5" max="150" step="5" value="70" id="age-input" name="age-input">
+      <input type="number" min="65" max="100" step="5" value="65" id="age-input" name="age-input">
     </div>
     <div id="race-form" class="map-control">
       <label for="race-input">RACE(0-9)</label>
@@ -34,7 +34,26 @@
     </div>
     <div id="symptom-form" class="map-control">
       <label for="symptom-input">Min since symptoms</label>
-      <input type="number" min="0" max="600" step="10" value="50" id="symptom-input" name="symptom-input">
+      <input type="number" min="10" max="100" step="10" value="10" id="symptom-input" name="symptom-input">
+    </div>
+    <div id="infowindow-selector" class="map-control">
+      <label for="infowindow-selector">Location IDs</label>
+      <input type="radio" name="infowindow" id="open-selector"
+          class="selector-control">
+      <label for="open-selector">On</label>
+      <input type="radio" name="infowindow" id="close-selector"
+          class="selector-control" checked="checked">
+      <label for="close-selector">Off</label>
+      <label for="loc-input" style="padding-left:10px">Find</label>
+      <input type="number" min="0" max="100" step="1" placeholder="Enter ID" id="loc-input" name="loc-input">
+    </div>
+    <div id="version-selector" class="map-control">
+      <input type="radio" name="version" id="before-selector"
+          class="selector-control" checked="checked">
+      <label for="before-selector">BE</label>
+      <input type="radio" name="version" id="after-selector"
+          class="selector-control">
+      <label for="after-selector">AF</label>
     </div>
     <div id="map"></div>
     <script type="text/javascript" src="js/gmaps.js"></script>
