@@ -5,19 +5,19 @@ import glob
 import numpy as np
 
 
-hospital_path = Path('MA_n=100.csv')
-times_path = Path('MA_n=100.csv')
+hospital_path = Path('MA_n=1000.csv')
+times_path = Path('MA_n=1000.csv')
 sex_str='male'
 age=85
 race=1
 time_since_symptoms=10
-s_default='auto'
-AGE_MIN = 65
-AGE_MAX = 85
-RACE_MIN = 0
+s_default=2000
+AGE_MIN = 75
+AGE_MAX = 75
+RACE_MIN = 2
 RACE_MAX = 9
-SYMP_MIN = 10
-SYMP_MAX = 100
+SYMP_MIN = 40
+SYMP_MAX = 40
 
 # See files that are downloaded
 # out = glob.glob(str(data_io.LOCAL_OUTPUT/
@@ -28,9 +28,9 @@ def get_basic_results(res_name):
 
     res = pd.read_csv(res_name)
     center_cols = res.columns[9:]
-    res['BestOption'] = res[center_cols].idxmax(axis=1)
-    res['BestCenterType'] = res['BestOption'].apply(lambda x: 1 if x.split(' ')[1]=='(CSC)' else 0)
-    res['BestCenterID'] = res['BestOption'].apply(lambda x: int(x.split(' ')[0]))
+    res['BestCenter'] = res[center_cols].idxmax(axis=1)
+    res['BestCenterType'] = res['BestCenter'].apply(lambda x: 1 if x.split(' ')[1]=='(CSC)' else 0)
+    res['BestCenterKey'] = res['BestCenter'].apply(lambda x: x.split(' ')[0])
     return res,center_cols
 
 
@@ -42,6 +42,7 @@ for age in range(AGE_MIN,AGE_MAX+upper,5):
             print(res_name)
             a_res,center_cols = get_basic_results(res_name)
             res_name=data_io.LOCAL_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_beAHA.csv'
+            print(res_name)
             b_res,center_cols = get_basic_results(res_name)
 
             input_cols = list(a_res.columns[:9])
@@ -53,4 +54,12 @@ for age in range(AGE_MIN,AGE_MAX+upper,5):
             ab_res=ab_res.join(pd.DataFrame.from_dict({idx: ','.join(center_cols[row.notna()]) for idx,row in b_res[center_cols].iterrows()},orient='index',columns=['AllOptions']))
             center_type_diff = ab_res['BestCenterType_be']-ab_res['BestCenterType_af']
             # changed_m = center_type_diff != 0
-            ab_res.to_csv(data_io.ANALYSIS_OUTPUT/res_name.stem.replace('beAHA','beaf_best_option.csv'),index=False)
+            ab_res.to_csv(data_io.BASIC_ANALYSIS_OUTPUT/res_name.stem.replace('beAHA','beaf_best_option.csv'),index=False)
+
+            # get changes
+            res_name=data_io.BASIC_ANALYSIS_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_beaf_best_option.csv'
+            print(res_name)
+            res = pd.read_csv(res_name)
+            changed_m = res['BestCenterKey_be']!=res['BestCenterKey_af']
+            # changed_m = center_type_diff != 0
+            res[changed_m].to_csv(data_io.BASIC_ANALYSIS_OUTPUT/res_name.stem.replace('beaf_best_option','changed.csv'),index=False)

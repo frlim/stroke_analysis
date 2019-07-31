@@ -5,9 +5,9 @@ import data_io
 hospital_path = Path('MA_n=100.csv')
 times_path = Path('MA_n=100.csv')
 sex_str='male'
-age=70
+age=75
 race=1
-time_since_symptoms=10
+time_since_symptoms=40
 s_default='auto'
 AGE_MIN = 65
 AGE_MAX = 85

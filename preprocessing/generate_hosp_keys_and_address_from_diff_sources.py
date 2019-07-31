@@ -5,7 +5,7 @@ import data_io
 import download
 import numpy as np
 import maps
-
+import column_names as colnames
 OUTPUT_COLS_ORDER = [
     'HOSP_ID', 'Hospital Name', 'Address', 'City', 'Zipcode', 'State',
     'CenterType', 'Source', 'Original_ID_Name', 'OrganizationId', 'AHA_ID'
@@ -14,7 +14,7 @@ OUTPUT_COLS_ORDER = [
 # Get JC stroke certification list (use modified download module from stroke_locations)
 JC_URL = ("https://www.qualitycheck.org/file.aspx?FolderName=" +
           "StrokeCertification&c=1")
-JC_filedir = data_io.PROCESSED_DATA / 'StrokeCertificationList.xlsx'
+JC_filedir = data_io.RAW_DATA / 'StrokeCertificationList.xlsx'
 if not JC_filedir.exists():
     download.download_file(JC_URL, 'Joint Commission', savedir=JC_filedir)
 jc_data = pd.read_excel(JC_filedir)
@@ -289,17 +289,19 @@ dtn_for_append.AHA_ID = dtn_id_for_append
 dtn_for_append.Original_ID_Name = 'AHA_ID'
 dtn_for_append.Source = 'KORI_GRANT'
 
-address_aaa = address_aa.append(
+address_out = address_aa.append(
     dtn_for_append, ignore_index=True, verify_integrity=True)
 
 # Generate hospital keys from AHA hospital list
-address_aaa['HOSP_KEY'] = address_aaa.index
-hosp_keys = address_aaa[[
+address_out['HOSP_KEY'] = address_out.index
+address_out['HOSP_KEY'] = address_out.HOSP_KEY.apply(lambda x: 'K'+ colnames.cast_to_int_then_str(x))
+address_out['HOSP_ID'] = address_out.HOSP_ID.apply(lambda x: 'ID' + colnames.cast_to_int_then_str(x))
+hosp_keys = address_out[[
     'HOSP_KEY', 'HOSP_ID', 'Source', 'Original_ID_Name', 'OrganizationId',
     'AHA_ID'
 ]]
 # Saving results
 hosp_keys.to_csv(
     data_io.PROCESSED_DATA / 'hospital_keys_master.csv', index=False)
-address_aa[OUTPUT_COLS_ORDER].to_csv(
+address_out[OUTPUT_COLS_ORDER].to_csv(
     data_io.PROCESSED_DATA / 'hospital_address_master.csv', index=False)

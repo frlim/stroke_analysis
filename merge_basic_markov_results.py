@@ -6,20 +6,20 @@ import numpy as np
 import re
 
 
-hospital_path = Path('MA_n=100.csv')
-times_path = Path('MA_n=100.csv')
+hospital_path = Path('MA_n=1000.csv')
+times_path = Path('MA_n=1000.csv')
 sex_str='male'
 age=65
 race=1
 time_since_symptoms=10
-s_default='auto'
+s_default=2000
 
-AGE_MIN = 70
-AGE_MAX = 85
+AGE_MIN = 75
+AGE_MAX = 75
 RACE_MIN = 0
-RACE_MAX = 9
-SYMP_MIN = 10
-SYMP_MAX = 100
+RACE_MAX = 2
+SYMP_MIN = 40
+SYMP_MAX = 40
 
 upper=1
 for age in range(AGE_MIN,AGE_MAX+upper,5):
@@ -29,16 +29,16 @@ for age in range(AGE_MIN,AGE_MAX+upper,5):
             res_name=f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_changed.csv'
             print(res_name)
 
-            basic_res = pd.read_csv(data_io.ANALYSIS_OUTPUT/res_name)
+            basic_res = pd.read_csv(data_io.BASIC_ANALYSIS_OUTPUT/res_name)
             locs = basic_res['Location']
-            bests_be = basic_res['BestOption_be']
-            bests_af = basic_res['BestOption_af']
+            bests_be = basic_res['BestCenter_be']
+            bests_af = basic_res['BestCenter_af']
             all_options = basic_res['AllOptions'].str.split(',')
             basic_res.set_index("Location",inplace=True)
 
 
             for idx,loc in locs.iteritems():
-                markov_comparison_name = data_io.ANALYSIS_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_loc={loc}_markov_comparison.xlsx'
+                markov_comparison_name = data_io.MARKOV_ANALYSIS_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_loc={loc}_markov_comparison.xlsx'
                 markov_comparison = pd.read_excel(markov_comparison_name,index_col=[0,1],header=[0,1])
                 print(markov_comparison_name)
                 def get_target_center(str_input):
@@ -88,5 +88,5 @@ for age in range(AGE_MIN,AGE_MAX+upper,5):
                 basic_res.loc[loc,"BestStrategy_be"] = out3.loc[out3.index[get_row_index(out3,"idxmax")]]["beAHA"].values
                 basic_res.loc[loc,"BestStrategy_af"] = out3.loc[out3.index[get_row_index(out3,"idxmax")]]["afAHA"].values
 
-            basic_res.to_excel(data_io.ANALYSIS_OUTPUT/
+            basic_res.to_excel(data_io.MARKOV_ANALYSIS_OUTPUT/
             f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_aggregated_markov_changes.xlsx')

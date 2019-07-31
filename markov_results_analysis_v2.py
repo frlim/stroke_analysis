@@ -14,10 +14,10 @@ time_since_symptoms=10
 s_default=2000
 AGE_MIN = 75
 AGE_MAX = 75
-RACE_MIN = 0
-RACE_MAX = 2
-SYMP_MIN = 10
-SYMP_MAX = 100
+RACE_MIN = 4
+RACE_MAX = 9
+SYMP_MIN = 40
+SYMP_MAX = 40
 
 def get_target_center(str_input):
     types = [r"Comprehensive to (.+)",r"Primary to (.+)",r"Drip and Ship (.+) to (.+)"]
@@ -33,24 +33,27 @@ for age in range(AGE_MIN,AGE_MAX+upper,5):
 
             res_name=f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_changed.csv'
             print(res_name)
+
             basic_res = pd.read_csv(data_io.BASIC_ANALYSIS_OUTPUT/res_name)
             locs = basic_res['Location']
             all_options = basic_res['AllOptions'].str.split(',')
             for idx,loc in locs.iteritems():
-                b_markov_res_name = data_io.LOCAL_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_beAHA_loc={loc}_qalys.csv'
-                a_markov_res_name = data_io.LOCAL_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_afAHA_loc={loc}_qalys.csv'
-                print(b_markov_res_name)
+                b_markov_res_name = data_io.LOCAL_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_loc={loc}_beAHA_detailed_outcome.csv'
+                a_markov_res_name = data_io.LOCAL_OUTPUT/f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_loc={loc}_afAHA_detailed_outcome.csv'
                 if not (b_markov_res_name.exists() & a_markov_res_name.exists()): continue
+                print(b_markov_res_name)
 
                 b_markov_res = pd.read_csv(b_markov_res_name)
                 a_markov_res = pd.read_csv(a_markov_res_name)
+                b_markov_res = b_markov_res[b_markov_res.Variable=='QALY']
+                a_markov_res = a_markov_res[a_markov_res.Variable=='QALY']
 
                 #keep only columns that have info about centers of interest
                 b_markov_res_centers = np.array([get_target_center(str(c)) for c in b_markov_res.columns])
-                all_truth = (b_markov_res_centers == basic_res.loc[idx,'BestOption_be']) | (b_markov_res_centers == basic_res.loc[idx,'BestOption_af'])
+                all_truth = (b_markov_res_centers == basic_res.loc[idx,'BestCenter_be']) | (b_markov_res_centers == basic_res.loc[idx,'BestCenter_af'])
                 b_markov_res = b_markov_res.loc[:,all_truth]
                 a_markov_res_centers = np.array([get_target_center(str(c)) for c in a_markov_res.columns])
-                all_truth = (a_markov_res_centers == basic_res.loc[idx,'BestOption_be']) | (a_markov_res_centers == basic_res.loc[idx,'BestOption_af'])
+                all_truth = (a_markov_res_centers == basic_res.loc[idx,'BestCenter_be']) | (a_markov_res_centers == basic_res.loc[idx,'BestCenter_af'])
                 a_markov_res = a_markov_res.loc[:,all_truth]
 
                 b_agg = b_markov_res.agg({'describe'})
