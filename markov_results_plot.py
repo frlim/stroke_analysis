@@ -17,7 +17,7 @@ s_default= 2000
 AGE_MIN = 75
 AGE_MAX = 75
 RACE_MIN = 0
-RACE_MAX = 2
+RACE_MAX = 9
 SYMP_MIN = 40
 SYMP_MAX = 40
 
