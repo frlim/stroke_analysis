@@ -104,10 +104,33 @@ aha_ma_address = aha_ma_address[OUTPUT_COLS_ORDER]
 aha_ma_address_for_append = aha_ma_address[~aha_ma_address['HOSP_ID'].
                                            isin(aha_address['HOSP_ID'])]
 
+# get missing address spreadsheet
+aha_missing_ne = pd.read_excel(data_io.RAW_DATA / 'Missing AHA IDs NE.xlsx')
+aha_missing_ne.columns = [
+    'HOSP_ID', 'Hospital Name', 'Address', 'City', 'State', 'Zipcode'
+]
+address_cols = [
+    'HOSP_ID', 'Hospital Name', 'Address', 'City', 'Zipcode', 'State'
+]
+aha_missing_ne = aha_missing_ne[address_cols]
+aha_missing_ne['AHA_ID'] = aha_missing_ne.HOSP_ID
+aha_missing_ne['OrganizationId'] = np.nan
+aha_missing_ne['Original_ID_Name'] = 'AHA_ID'
+aha_missing_ne['CenterType'] = np.nan
+aha_missing_ne['Source'] = 'Missing AHA IDs NE'
+
+aha_missing_ne_for_append = aha_missing_ne[~aha_missing_ne.HOSP_ID.isin(aha_address.HOSP_ID)]
+aha_missing_ne_for_append.shape
+aha_address.columns
+aha_missing_ne.columns
+
+
+aha_address_total = pd.concat([aha_address,aha_ma_address_for_append,aha_missing_ne_for_append])
+
 # Comparing what's inside JC and AHA list for common hospitals
 jc_data['Zipcode'] = jc_data['Zipcode'].astype(str)
-aha_address['Zipcode'] = aha_address['Zipcode'].astype(str)
-jc_aha = jc_data.merge(aha_address, on=['City', 'State'])
+aha_address_total['Zipcode'] = aha_address_total['Zipcode'].astype(str)
+jc_aha = jc_data.merge(aha_address_total, on=['City', 'State'])
 
 # Google maps Address searching
 JC_searched_filedir = data_io.PROCESSED_DATA / 'JCC_google_address.csv'
@@ -270,18 +293,16 @@ jc_data = jc_data.drop(['Address', 'AHA_ID'],
 # Appending
 # JC has data on Comprehensive and Primary so use as base for appending
 # Dont use AHA address as base
-aha_address_for_append = aha_address[~aha_address.HOSP_ID.isin(jc_data.HOSP_ID
-                                                               )]
+aha_address_for_append = aha_address_total[~aha_address_total.HOSP_ID.isin(jc_data.HOSP_ID
+                                                           )]
 address_a = jc_data.append(
     aha_address_for_append, ignore_index=True, verify_integrity=True)
-address_aa = address_a.append(
-    aha_ma_address_for_append, ignore_index=True, verify_integrity=True)
 
 ## Loading DTN to get any AHA_ID that we cant identify yet
 dtn_aha = data_io.cleaned_KORI_GRANT()
 dtn_aha['AHA_ID'] = dtn_aha['AHA_ID'].astype(int).astype(str)
-address_aa['AHA_ID'] = address_aa['AHA_ID'].astype(str)
-dtn_id_for_append = dtn_aha.AHA_ID[~dtn_aha.AHA_ID.isin(address_aa.AHA_ID)]
+address_a['AHA_ID'] = address_a['AHA_ID'].astype(str)
+dtn_id_for_append = dtn_aha.AHA_ID[~dtn_aha.AHA_ID.isin(address_a.AHA_ID)]
 dtn_for_append = pd.DataFrame(
     columns=['HOSP_ID', 'AHA_ID', 'Original_ID_Name', 'Source'])
 dtn_for_append.HOSP_ID = dtn_id_for_append
@@ -289,13 +310,15 @@ dtn_for_append.AHA_ID = dtn_id_for_append
 dtn_for_append.Original_ID_Name = 'AHA_ID'
 dtn_for_append.Source = 'KORI_GRANT'
 
-address_out = address_aa.append(
+address_out = address_a.append(
     dtn_for_append, ignore_index=True, verify_integrity=True)
 
 # Generate hospital keys from AHA hospital list
 address_out['HOSP_KEY'] = address_out.index
-address_out['HOSP_KEY'] = address_out.HOSP_KEY.apply(lambda x: 'K'+ colnames.cast_to_int_then_str(x))
-address_out['HOSP_ID'] = address_out.HOSP_ID.apply(lambda x: 'ID' + colnames.cast_to_int_then_str(x))
+address_out['HOSP_KEY'] = address_out.HOSP_KEY.apply(lambda x: 'K' + colnames.
+                                                     cast_to_int_then_str(x))
+address_out['HOSP_ID'] = address_out.HOSP_ID.apply(lambda x: 'ID' + colnames.
+                                                   cast_to_int_then_str(x))
 hosp_keys = address_out[[
     'HOSP_KEY', 'HOSP_ID', 'Source', 'Original_ID_Name', 'OrganizationId',
     'AHA_ID'

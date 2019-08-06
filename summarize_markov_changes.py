@@ -1,32 +1,48 @@
 import pandas as pd
 from pathlib import Path
 import data_io
+import parameters as param
 
-hospital_path = Path('MA_n=100.csv')
-times_path = Path('MA_n=100.csv')
-sex_str='male'
-age=75
-race=1
-time_since_symptoms=40
-s_default='auto'
-AGE_MIN = 65
-AGE_MAX = 85
-RACE_MIN = 0
-RACE_MAX = 9
-SYMP_MIN = 10
-SYMP_MAX = 100
+race=0
+for race in range(10):
+    agg_markov_name = data_io.BASIC_ANALYSIS_OUTPUT / param.build_filename_prefix(
+        race=race, suffix='_aggregated_markov_changes', format='.xlsx')
+
+    agg_markov = pd.read_excel(agg_markov_name)
 
 
-agg_markov_name = f'times={times_path.stem}_hospitals={hospital_path.stem}_sex={sex_str}_age={age}_race={race}_symptom={time_since_symptoms}_nsim={s_default}_aggregated_markov_changes.xlsx'
-print(agg_markov_name)
-agg_markov = pd.read_excel(data_io.ANALYSIS_OUTPUT/agg_markov_name)
-agg_markov['QALYdiff_af']*365 > 10
-agg_markov.head()
+    def extract_type(val):
+        return val.split(' ')[1].replace('(', '').replace(')', '')
 
-# -1 == PSC -> CSC
-# 1 == CSC -> PSC
-# 0 == same type change
-agg_markov['ChangeType']=(agg_markov['BestCenterType_be']-agg_markov['BestCenterType_af']).map({-1:'PSC to CSC',1:'CSC to PSC',0:'Same Type'})
 
-agg_markov['ChangeType'].value_counts()
-agg_markov.groupby('ChangeType').agg({'QALYdiff_af':'describe','QALYdiff_be':'describe'})
+    def change_type(df):
+        return extract_type(df.BestCenter_be) + ' to ' + extract_type(
+            df.BestCenter_af)
+
+
+    agg_markov['ChangeType'] = agg_markov.apply(change_type, axis=1)
+
+    agg_markov['ChangeType'].value_counts()
+    agg_markov['ChangeType'].value_counts().sum()
+
+    agg_gb = agg_markov.groupby('ChangeType').agg({
+        'QALYdiff_af': 'describe',
+        'QALYdiff_be': 'describe'
+    })
+
+    a=agg_markov.agg({
+        'QALYdiff_af': 'describe',
+        'QALYdiff_be': 'describe'
+    })
+    agg_gb.loc['All Changes',:] = a.stack().swaplevel().sort_index()
+    agg_gb = pd.concat([agg_gb],keys=[race]*agg_gb.shape[0],names=['RACE_score'])
+    if race==0:
+        agg_gb_append = agg_gb
+    else:
+        agg_gb_append = agg_gb_append.append(agg_gb)
+
+
+agg_gb_append2 = agg_gb_append.copy()*365
+idx =pd.IndexSlice
+agg_gb_append2.loc[:,idx[:,'count']]=agg_gb_append2.loc[:,idx[:,'count']]/365
+agg_gb_append2.to_excel(data_io.BASIC_ANALYSIS_OUTPUT/'agg_by_race_score.xlsx')
