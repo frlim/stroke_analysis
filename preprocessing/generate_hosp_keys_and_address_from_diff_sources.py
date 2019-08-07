@@ -119,13 +119,14 @@ aha_missing_ne['Original_ID_Name'] = 'AHA_ID'
 aha_missing_ne['CenterType'] = np.nan
 aha_missing_ne['Source'] = 'Missing AHA IDs NE'
 
-aha_missing_ne_for_append = aha_missing_ne[~aha_missing_ne.HOSP_ID.isin(aha_address.HOSP_ID)]
+aha_missing_ne_for_append = aha_missing_ne[~aha_missing_ne.HOSP_ID.
+                                           isin(aha_address.HOSP_ID)]
 aha_missing_ne_for_append.shape
 aha_address.columns
 aha_missing_ne.columns
 
-
-aha_address_total = pd.concat([aha_address,aha_ma_address_for_append,aha_missing_ne_for_append])
+aha_address_total = pd.concat(
+    [aha_address, aha_ma_address_for_append, aha_missing_ne_for_append])
 
 # Comparing what's inside JC and AHA list for common hospitals
 jc_data['Zipcode'] = jc_data['Zipcode'].astype(str)
@@ -136,13 +137,14 @@ jc_aha = jc_data.merge(aha_address_total, on=['City', 'State'])
 JC_searched_filedir = data_io.PROCESSED_DATA / 'JCC_google_address.csv'
 
 if JC_searched_filedir.exists():
-    jc_searched = pd.read_csv(JC_searched_filedir)
+    jc_for_search = pd.read_csv(JC_searched_filedir)
 else:
     jc_cols_for_search = [
         'HOSP_ID_x', 'Hospital Name_x', 'City', 'State', 'Zipcode_x',
         'Source_x', 'Original_ID_Name_x'
     ]
-    jc_for_search = jc_aha[jc_cols_for_search].drop_duplicates()
+    jc_for_search = jc_aha[jc_cols_for_search].drop_duplicates().reset_index()
+    jc_for_search.drop('index', axis=1, inplace=True)
 
     # add cols to store google maps data
     G_cols = [
@@ -168,32 +170,32 @@ else:
             jc_for_search.loc[idx, 'G_Latitude'] = results['Latitude']
             jc_for_search.loc[idx, 'G_Longitude'] = results['Longitude']
             jc_for_search.loc[idx, 'G_Failed_Lookup'] = False
+    jc_for_search.to_csv(JC_searched_filedir, index=False)
 
-    address_parsed = jc_for_search['G_Address'].apply(lambda x: [
-        f.strip() for f in x.split(',')
-    ] if isinstance(x, str) else np.nan)
-    # cleaning
-    address_parsed.dropna(inplace=True)
-    # fix special cases
-    address_parsed[address_parsed.apply(lambda x: len(x) != 4)]
-    address_parsed[108] = address_parsed[108][1:]
-    address_parsed[address_parsed.apply(lambda x: len(x) != 4)]
-    jc_address = pd.DataFrame(
-        list(address_parsed),
-        columns=['Address', 'City', 'StateZip', 'Country'],
-        index=address_parsed.index)
-    zip_state_jc_address = pd.DataFrame(
-        list(jc_address['StateZip'].str.split(' ')),
-        columns=['State', 'Zip'],
-        index=jc_address.index)
-    jc_address = jc_address.join(zip_state_jc_address)
-    jc_address.drop('StateZip', axis=1, inplace=True)
+address_parsed = jc_for_search['G_Address'].apply(lambda x: [
+    f.strip() for f in x.split(',')
+] if isinstance(x, str) else np.nan)
+# cleaning
+address_parsed.dropna(inplace=True)
+# fix special cases, need to do manually every run
+address_parsed[address_parsed.apply(lambda x: len(x) != 4)]
+address_parsed[12] = address_parsed[12][1:]
+address_parsed[63] = [''] + address_parsed[63]
+address_parsed[address_parsed.apply(lambda x: len(x) != 4)]
 
-    jc_searched = jc_for_search.join(jc_address['Address'])
-    jc_searched = jc_searched.rename({'Address': 'Address_Searched'}, axis=1)
-    # jc_searched=jc_searched.merge(jc_aha[['HOSP_ID_x','Hospital Name_x']].drop_duplicates(),on='Hospital Name_x')
-    jc_searched.to_csv(
-        data_io.PROCESSED_DATA / 'JCC_google_address.csv', index=False)
+jc_address = pd.DataFrame(
+    list(address_parsed),
+    columns=['Address', 'City', 'StateZip', 'Country'],
+    index=address_parsed.index)
+zip_state_jc_address = pd.DataFrame(
+    list(jc_address['StateZip'].str.split(' ')),
+    columns=['State', 'Zip'],
+    index=jc_address.index)
+jc_address = jc_address.join(zip_state_jc_address)
+jc_address.drop('StateZip', axis=1, inplace=True)
+
+jc_searched = jc_for_search.join(jc_address['Address'])
+jc_searched = jc_searched.rename({'Address': 'Address_Searched'}, axis=1)
 
 jc_aha = jc_aha.merge(
     jc_searched[['HOSP_ID_x', 'Address_Searched']], on='HOSP_ID_x', how='left')
@@ -242,27 +244,34 @@ def address_comparison(df, street_type_filter=True, mode='intersect'):
 
 
 # Compare hospital name and address to find true matches
-common_address_words = jc_aha.apply(address_comparison, axis=1)
 num_shared_words = jc_aha.apply(name_comparison, axis=1)
-jc_aha2 = jc_aha[(num_shared_words > 0) & (common_address_words > 0)]
-# hosp_id_count=jc_aha2.groupby('HOSP_ID_x').agg({'HOSP_ID_x':'count'})
-# hosp_id_problem = hosp_id_count.index[list(hosp_id_count['HOSP_ID_x']>1)]
-# hosp_id_problem
-
+# name need to share at least one word that is not generic
+jc_aha2 = jc_aha[(num_shared_words > 0)]
 # match by  with hosp name sharing highest number of common words
 jc_aha2['_num_shared_words'] = jc_aha2.apply(
     name_comparison, axis=1, generic_filter=False)
+# groupby each JC hospital and take the row w most similar name
 intersect_mask = jc_aha2.groupby(
-    ['City', 'State'], as_index=False)['_num_shared_words'].transform(
+    'Hospital Name_x', as_index=False)['_num_shared_words'].transform(
         'max')['_num_shared_words'] == jc_aha2['_num_shared_words']
-jc_aha_shared = jc_aha2[intersect_mask]
+jc_aha2 = jc_aha2[intersect_mask]
 
+# choose one where address share most similarity as well
+jc_aha2['_num_shared_address_words'] = jc_aha2.apply(
+    address_comparison, axis=1)
+intersect_mask = jc_aha2.groupby(
+    'Hospital Name_x', as_index=False)['_num_shared_address_words'].transform(
+        'max')['_num_shared_address_words'] == jc_aha2['_num_shared_address_words']
+jc_aha2 = jc_aha2[intersect_mask]
+
+jc_aha_shared = jc_aha2
 # remove generic footer in JC hospital name
 jc_aha_shared['Hospital Name_x'] = jc_aha_shared[
     'Hospital Name_x'].str.replace(', LCC', '').str.replace(', Inc.', '')
+# find # different words between JC hospital name and AHA hospital name
 jc_aha_shared['_num_non_shared_words'] = jc_aha_shared.apply(
     name_comparison, axis=1, generic_filter=True, mode='difference')
-# find # different words between JC hospital name and AHA hospital name
+# take the row with least difference in # of words
 not_intersect_mask = jc_aha_shared.groupby([
     'Hospital Name_x'
 ], as_index=False)['_num_non_shared_words'].transform(
@@ -271,11 +280,14 @@ jc_aha_shared = jc_aha_shared[not_intersect_mask]
 
 # preview shared matches results
 jc_aha_shared.to_csv(data_io.output / 'jc_aha_shared.csv')
+
 # manual check
 jc_aha_shared.shape
 hosp_id_count = jc_aha_shared.groupby('HOSP_ID_x').agg({'HOSP_ID_x': 'count'})
-hosp_id_problem = hosp_id_count.index[list(hosp_id_count['HOSP_ID_x'] > 1)]
-jc_data.head()
+hosp_id_problem = hosp_id_count.index[list(
+    hosp_id_count['HOSP_ID_x'] > 1)]  # should be empty
+hosp_id_problem
+
 # put searched address into jc_data
 jc_data = jc_data.merge(
     # include in AHA_ID
@@ -293,8 +305,8 @@ jc_data = jc_data.drop(['Address', 'AHA_ID'],
 # Appending
 # JC has data on Comprehensive and Primary so use as base for appending
 # Dont use AHA address as base
-aha_address_for_append = aha_address_total[~aha_address_total.HOSP_ID.isin(jc_data.HOSP_ID
-                                                           )]
+aha_address_for_append = aha_address_total[~aha_address_total.AHA_ID.
+                                           isin(jc_data.AHA_ID)]
 address_a = jc_data.append(
     aha_address_for_append, ignore_index=True, verify_integrity=True)
 
