@@ -3,7 +3,7 @@ from pathlib import Path
 import data_io
 import parameters as param
 
-race=0
+
 for race in range(10):
     agg_markov_name = data_io.BASIC_ANALYSIS_OUTPUT / param.build_filename_prefix(
         race=race, suffix='_aggregated_markov_changes', format='.xlsx')
