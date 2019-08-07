@@ -38,9 +38,9 @@ function getCenterIconByTypeWithText(centerType,text){
 }
 
 var dataDIR='./data_js/';
-var centersDIR = dataDIR + 'MA_n=100_centers.json';
-var pointsDIR = dataDIR + 'MA_n=100_points.json';
-var linesDIR = dataDIR + "times=MA_n=100_hospitals=MA_n=100_sex=male_age=65_race=0_symptom=10_nsim=auto_beAHA.json";
+var centersDIR = dataDIR + 'MA_n=1000_centers.json';
+var pointsDIR = dataDIR + 'MA_n=1000_points.json';
+var linesDIR = dataDIR + "times=MA_n=1000_hospitals=MA_n=1000_sex=male_age=75_race=0_symptom=40_nsim=2000_afAHA.json";
 // { "color": "#ededed" },
 var mapStyles = {
   "default":null,
@@ -189,7 +189,7 @@ function responseChange(){
   } else {
     version = "beAHA";
   }
-  linesDIR= dataDIR + "times=MA_n=100_hospitals=MA_n=100_sex="+sex+"_age="+age+"_race="+race+"_symptom="+symptom+"_nsim=auto_"+version+".json";
+  linesDIR= dataDIR + "times=MA_n=1000_hospitals=MA_n=1000_sex="+sex+"_age="+age+"_race="+race+"_symptom="+symptom+"_nsim=2000_"+version+".json";
   console.log(linesDIR);
   fetch(linesDIR).then(res => res.json()).then(function(data) {
     updateLines(data);});
@@ -228,7 +228,7 @@ function createMarkers(results){
       var long = results[i].Longitude;
       var latLng = new google.maps.LatLng(lat,long);
       var hKey = results[i].HOSP_KEY;
-      var name = "HOSP_KEY " + hKey.toString();
+      var name = hKey.toString();
       var type = results[i].CenterType;
       var icons= getCenterIconByTypeWithText(results[i].CenterType,hKey.toString());
       var marker = new google.maps.Marker({
@@ -245,12 +245,14 @@ function createMarkers(results){
 function createMarkersForPoints(results){
     // Loop through the results array and place a marker for each
   // set of coordinates.
-    for (var i = 0; i < results.length; i++) {
-      var lat = results[i].Latitude;
-      var long = results[i].Longitude;
+    var keys = Object.keys(results);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var lat = results[key].Latitude;
+      var long = results[key].Longitude;
       var latLng = new google.maps.LatLng(lat,long);
-      var pKey = results[i].ID;
-      var name = "ID " + pKey.toString();
+      var pKey = key;
+      var name = pKey.toString();
       var marker = new google.maps.Marker({
         // title: name.toString(),
         position: latLng,
@@ -315,7 +317,7 @@ function updateLines(results){
   for (var i = 0; i < results.length; i++) {
     var pointID = results[i].Point.Location;
     var centerIDsList = [];
-    var preList = new Uint32Array(Object.keys(pointsList[pointID].lines));
+    var preList = Object.keys(pointsList[pointID].lines);
     console.log("old plotted list: "+preList);
     // console.log(preList);
     var comColor = results[i].Point.ComColor;
@@ -366,7 +368,7 @@ function updateLines(results){
     }
     console.log("actual centerID for this race score: "+centerIDsList);
     // find which line not in updated list of points\
-    centerIDsList = new Uint32Array(centerIDsList);
+    centerIDsList = centerIDsList;
     for (var c=0;c<preList.length;c++){
       var centerID = preList[c];
       if (!centerIDsList.includes(centerID)){

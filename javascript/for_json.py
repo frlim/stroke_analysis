@@ -25,7 +25,7 @@ data_path = Path('F:\\stroke_model_output\\output_080619')
 hospital_path = stroke_location_path / 'output' / 'hospitals' / f'{state}_n={nloc}.csv'
 times_path = stroke_location_path / 'output' / 'travel_times' / f'{state}_n={nloc}.csv'
 points_path = stroke_location_path / 'data' / 'points' / f'{state}_n={nloc}.csv'
-sex_str = 'male'
+sex_str = 'female'
 age = 75
 race = 7
 time_since_symptoms = 40
@@ -72,8 +72,11 @@ centers_for_json = centers[[
     'destination_KEY'
 ]]
 centers_for_json.to_json(
-    out_path / f'{state}_n={nloc}_centers.js', orient='records')
+    out_path / f'{state}_n={nloc}_centers.json', orient='records')
+centers_for_json.sort_values(by=['Latitude','Longitude']).to_excel(
+    identified_file_path / f'{state}_n={nloc}_centers.xlsx')
 
+centers_for_json.sort_values(by=['Latitude','Longitude'])
 # identify center lat and longitude by HOSP_KEY
 # sheet = xw.Book(str(hosp_key_path)).sheets[0]
 # hosp_key = sheet['A1:F1918'].options(
@@ -133,6 +136,7 @@ for age in range(AGE_MIN, AGE_MAX + upper, 5):
                 )  # convert to weight
                 centers_at_point = []
                 for c_id, weight in center_weights.iteritems():
+                    print(c_id)
                     mask = centers['HOSP_KEY'] == c_id
                     c_lat, c_long = centers.loc[mask, 'Latitude'].iloc[
                         0], centers.loc[mask, 'Longitude'].iloc[0]
