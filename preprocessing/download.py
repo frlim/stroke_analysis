@@ -7,7 +7,6 @@ import urllib.request
 import urllib.error
 from tqdm import tqdm
 
-
 class TqdmUpTo(tqdm):
     """
     tqdm instance wrapped for urlretrieve reporthook
@@ -15,7 +14,6 @@ class TqdmUpTo(tqdm):
     Inspired by [twine#242](https://github.com/pypa/twine/pull/242),
     [here](https://github.com/pypa/twine/commit/42e55e06).
     """
-
     def update_to(self, b=1, bsize=1, tsize=None):
         """
         b  : int, optional
@@ -30,7 +28,10 @@ class TqdmUpTo(tqdm):
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
 
-def download_file(source, desc=None, retries=5, savedir='StrokeCertificationList.xlsx'):
+def download_file(source,
+                  desc=None,
+                  retries=5,
+                  savedir='StrokeCertificationList.xlsx'):
     """
     Download a single file from the give source url to a temporary location,
         displaying a progress bar while downloading, then returns the location
@@ -40,14 +41,14 @@ def download_file(source, desc=None, retries=5, savedir='StrokeCertificationList
     attempt = 0
     while attempt < retries:
         try:
-            with TqdmUpTo(
-                    unit='B',
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    miniters=1,
-                    desc=desc) as t:
-                file, _ = urllib.request.urlretrieve(
-                    source, filename=savedir, reporthook=t.update_to)
+            with TqdmUpTo(unit='B',
+                          unit_scale=True,
+                          unit_divisor=1024,
+                          miniters=1,
+                          desc=desc) as t:
+                file, _ = urllib.request.urlretrieve(source,
+                                                     filename=savedir,
+                                                     reporthook=t.update_to)
                 break
         except (socket.timeout, urllib.error.URLError):
             attempt += 1

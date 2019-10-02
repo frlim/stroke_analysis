@@ -1,6 +1,8 @@
 from pathlib import Path
 import xlwings as xw
 import pandas as pd
+import download
+
 # DTN_PATH = Path('Z:\\stroke_data')
 _stroke_dir = Path('Z:\\stroke_data\\')
 RAW_DATA = _stroke_dir / 'raw_data'
@@ -30,3 +32,9 @@ def cleaned_KORI_GRANT(kori_grant=RAW_DATA / 'KORI_GRANT.xlsx'):
     return xw.Book(str(kori_grant)).sheets[0].range(cell_range).options(
         convert=pd.DataFrame, index=False,
         header=True).value.drop_duplicates()
+
+def JC_StrokeCetification(path=RAW_DATA / 'StrokeCertificationList.xlsx'):
+    JC_URL = "https://www.qualitycheck.org/file.aspx?FolderName=" + "StrokeCertification&c=1"
+    if not path.exists():
+        download.download_file(JC_URL, 'Joint Commission', savedir=path)
+    return pd.read_excel(path,dtype=str)
