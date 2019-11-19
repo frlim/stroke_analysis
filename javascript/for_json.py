@@ -14,8 +14,8 @@ version = 'afAHA'
 generate_color = True
 
 identified_file_path = Path('Z:\\stroke_data\\processed_data')
-hosp_latlong_path = identified_file_path / f'strokecenter_address_{state}_for_stroke_locations.csv'
-hosp_key_path = identified_file_path / 'hospital_keys_master.csv'
+hosp_latlong_path = identified_file_path / 'hospital_address_NE_for_stroke_locations.csv'
+hosp_key_path = identified_file_path / 'hospital_keys_master_v2.csv'
 stroke_location_path = Path(
     'C:\\Users\\hqt2102\\OneDrive - cumc.columbia.edu\\Stroke\\stroke_locations'
 )
