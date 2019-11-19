@@ -32,16 +32,16 @@ for time_since_symptoms in range(param.SYMP_MIN, param.SYMP_MAX + upper, 10):
     plt.xticks(range(0, 10))
     plt.xlabel('RACE score')
     plt.ylabel(
-        'Quality-adjusted days gained from\n Going to Hospital A instead of Hospital B'
+        'Quality-adjusted days gained from\n Going to Hospital B instead of Hospital A'
     )
     # plt.suptitle('Patiet Outcome when using Real Hospital DTN data')
     plt.title(
-        'Cases where real-data model chooses Hospital A\n and no-real-data model chooses hospital B'
+        'Cases where revised model chooses Hospital B\n and generic model chooses hospital A'
     )
     plt.ylim((0, 80))
     # fig.subplots_adjust(bottom=.12)
-    plt.tight_layout()
-    plt.legend()
+    # plt.tight_layout()
+    plt.legend(bbox_to_anchor=(1.4,1),loc='upper right', ncol=2)
     outname = data_io.GRAPH_OUTPUT / param.build_filename_prefix(
         race='all',
         time_since_symptoms=time_since_symptoms,
@@ -56,16 +56,16 @@ for time_since_symptoms in range(param.SYMP_MIN, param.SYMP_MAX + upper, 10):
     plt.xticks(range(0, 10))
     plt.xlabel('RACE score')
     plt.ylabel(
-        'Quality-adjusted days gained from\n Going to Hospital A instead of Hospital B'
+        'Quality-adjusted days gained from\n Going to Hospital B instead of Hospital A'
     )
     # plt.suptitle('Patiet Outcome when using Real Hospital DTN data')
     plt.title(
-        'Cases where real-data model chooses Hospital A\n and no-real-data model chooses hospital B'
+        'Cases where revised model chooses Hospital B\n and generic model chooses hospital A'
     )
     plt.ylim((0, 80))
     # fig.subplots_adjust(bottom=.12)
-    plt.tight_layout()
-    plt.legend()
+    # plt.tight_layout()
+    plt.legend(bbox_to_anchor=(1.4,1),loc='upper right', ncol=2)
     outname = data_io.GRAPH_OUTPUT / param.build_filename_prefix(
         race='all',
         time_since_symptoms=time_since_symptoms,

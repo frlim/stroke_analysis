@@ -3,8 +3,8 @@ from pathlib import Path
 import data_io
 import parameters as param
 
-
-for race in range(10):
+dflist=[]
+for race in range(param.RACE_MIN,param.RACE_MAX+1):
     agg_markov_name = data_io.BASIC_ANALYSIS_OUTPUT / param.build_filename_prefix(
         race=race, suffix='_aggregated_markov_changes', format='.xlsx')
 
@@ -36,13 +36,9 @@ for race in range(10):
     })
     agg_gb.loc['All Changes',:] = a.stack().swaplevel().sort_index()
     agg_gb = pd.concat([agg_gb],keys=[race]*agg_gb.shape[0],names=['RACE_score'])
-    if race==0:
-        agg_gb_append = agg_gb
-    else:
-        agg_gb_append = agg_gb_append.append(agg_gb)
+    dflist.append(agg_gb)
 
-
-agg_gb_append2 = agg_gb_append.copy()*365
+agg_gb_append2 = pd.concat(dflist)*365
 idx =pd.IndexSlice
 agg_gb_append2.loc[:,idx[:,'count']]=agg_gb_append2.loc[:,idx[:,'count']]/365
 agg_gb_append2.to_excel(data_io.BASIC_ANALYSIS_OUTPUT/'agg_by_race_score.xlsx')

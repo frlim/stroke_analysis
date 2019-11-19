@@ -5,3 +5,5 @@ scratch*.py
 javascript/data_js/*
 
 javascript/js/config.js
+
+.ipynb_checkpoints/*

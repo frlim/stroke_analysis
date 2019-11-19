@@ -1,11 +1,11 @@
 from pathlib import Path
-HOSPITALS_PATH = Path('MA_n=1000.csv')
-TIMES_PATH = Path('MA_n=1000.csv')
-sex_str = 'male'
+HOSPITALS_PATH = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv')
+TIMES_PATH = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv')
+sex_str = 'female'
 age = 75
 race = 1
 time_since_symptoms = 40
-s_default = 2000
+s_default = 1000
 AGE_MIN = 75
 AGE_MAX = 75
 RACE_MIN = 0

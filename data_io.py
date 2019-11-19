@@ -4,12 +4,12 @@ import os
 if os.name == 'nt':
     DTN_PATH = Path('Z:\\stroke_data\\processed_data')
     MODELOUT_PATH = Path.cwd().parent / 'patrick_stroke' / 'output'
-    LOCAL_OUTPUT = Path('F:\\stroke_model_output\\output_080619')
+    LOCAL_OUTPUT = Path('F:\\stroke_model_output\\output_111419')
     MARKOV_ANALYSIS_OUTPUT = Path(
-        'F:\\stroke_model_output\\markov_describe_080619\\')
+        'F:\\stroke_model_output\\markov_describe_111419\\')
     BASIC_ANALYSIS_OUTPUT = Path(
-        'F:\\stroke_model_output\\results_analysis_080619\\')
-    GRAPH_OUTPUT = Path('F:\\stroke_model_output\\plots_080619\\')
+        'F:\\stroke_model_output\\results_analysis_111419\\')
+    GRAPH_OUTPUT = Path('F:\\stroke_model_output\\plots_111419\\')
 else:
     DTN_PATH = Path('~/deidentified_stroke_data')
     MODELOUT_PATH = Path.cwd().parent / 'patrick_stroke' / 'output'

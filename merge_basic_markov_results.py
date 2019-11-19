@@ -32,8 +32,9 @@ for age in range(param.AGE_MIN, param.AGE_MAX + upper, 5):
                     loc=loc,
                     suffix='_markov_comparison',
                     format='.xlsx')
-                markov_comparison = pd.read_excel(
-                    markov_comparison_name, index_col=[0, 1], header=[0, 1])
+                markov_comparison = pd.read_excel(markov_comparison_name,
+                                                  index_col=[0, 1],
+                                                  header=[0, 1])
                 print(markov_comparison_name)
 
                 def get_target_center(str_input):
@@ -61,16 +62,16 @@ for age in range(param.AGE_MIN, param.AGE_MAX + upper, 5):
                 def sort_by_max_desc(group):
                     max_col = np.nonzero(
                         ["max" in col for col in group.columns])[0][0]
-                    return group.sort_values(
-                        by=group.columns[max_col], ascending=False)
+                    return group.sort_values(by=group.columns[max_col],
+                                             ascending=False)
 
                 def get_col_index(out, col_name="max"):
-                    return np.nonzero(
-                        [col_name in col for col in out.columns])[0][0]
+                    return np.nonzero([col_name in col
+                                       for col in out.columns])[0][0]
 
                 def get_row_index(out, idx_name="max"):
-                    return np.nonzero(
-                        [idx_name in row for row in out.index])[0][0]
+                    return np.nonzero([idx_name in row
+                                       for row in out.index])[0][0]
 
                 idx = pd.IndexSlice
                 version_groups = markov_comparison2.loc[
@@ -89,8 +90,8 @@ for age in range(param.AGE_MIN, param.AGE_MAX + upper, 5):
                     for i, n in enumerate(out.columns[max_col_idx]))
 
                 diff_col = out[out.columns[max_col_idx]].groupby(
-                    level="version").diff(periods=-1).rename(
-                        diff_col_name, axis=1)
+                    level="version").diff(periods=-1).rename(diff_col_name,
+                                                             axis=1)
                 out2 = out.join(diff_col).T
 
                 out3 = out2.dropna(axis=1)
@@ -104,10 +105,10 @@ for age in range(param.AGE_MIN, param.AGE_MAX + upper, 5):
                 basic_res.loc[loc, "BestStrategy_af"] = out3.loc[out3.index[
                     get_row_index(out3, "idxmax")]]["afAHA"].values
 
-            basic_res.to_excel(
-                data_io.BASIC_ANALYSIS_OUTPUT / param.build_filename_prefix(
-                    age=age,
-                    race=race,
-                    time_since_symptoms=time_since_symptoms,
-                    suffix='_aggregated_markov_changes',
-                    format='.xlsx'))
+            basic_res.to_excel(data_io.BASIC_ANALYSIS_OUTPUT /
+                               param.build_filename_prefix(
+                                   age=age,
+                                   race=race,
+                                   time_since_symptoms=time_since_symptoms,
+                                   suffix='_aggregated_markov_changes',
+                                   format='.xlsx'))
