@@ -1,5 +1,5 @@
 ## Stroke Analysis package
-Tools and scripts to visualize and process outputs made by Stroke Model or stroke_locations
+Tools and scripts to visualize and process outputs made by [Stroke Model](https://github.com/ryanhantruong/stroke) or [stroke_locations](https://github.com/ryanhantruong/stroke_locations)
 
 ---
 ### Preprocessing
