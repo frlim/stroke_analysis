@@ -3,7 +3,7 @@ Tools and scripts to visualize and process outputs made by Stroke Model or strok
 
 ---
 ### Preprocessing
-Prepare hospital performance data to serve as inputs for Stroke Model
+Prepare hospital performance data to serve as inputs for stroke_location
 
 ---
 ### Visualizing Output
