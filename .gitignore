@@ -7,3 +7,9 @@ javascript/data_js/*
 javascript/js/config.js
 
 .ipynb_checkpoints/*
+
+config/*.json
+config/*.cfg
+
+preprocessing/config/*.cfg
+preprocessing/config/*.json
