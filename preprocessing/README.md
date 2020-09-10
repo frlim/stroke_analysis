@@ -1,4 +1,4 @@
-Scripts here are meant clean/generate hospital performance data to feed
+Scripts to clean/generate hospital performance data to feed
 into Stroke triage model.
 
 order of operations:
