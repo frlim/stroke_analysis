@@ -19,17 +19,22 @@ def get_basic_results(res_name):
 
 BEST_CENTER_COLS = ['BestCenterKey','BestCenterType']
 
-def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None):
+def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,suffixes=None):
     if strategies is None:
         # get most cost-effective strategy
         most_ce = agout.columns[agout.columns.get_level_values('Strategy').str.find('most C/E')>-1][0][0]
         for_join = agout.loc[var,most_ce].to_frame().T
-    else:
-        for_join = af_agout.loc[var,af_agout.columns.get_level_values(0).isin(strategies)]
-        for_join = for_join.to_frame().T
-    for_join.columns = [c+'_'+var for c in for_join.columns]
-    for_join.drop(f"count_{var}",axis=1,inplace=True)
-    return for_join
+        suffixes = ['af']
+    # idx = pd.IndexSlice
+    stats_df_l = []
+    for strategy,suffix in zip(strategies,suffixes):
+        stat_for_one_strategy = af_agout.loc[var,strategy].to_frame().T
+        stat_for_one_strategy.drop("count",axis=1,inplace=True)
+        stat_for_one_strategy.columns = [ '_'.join((c,var,suffix)) for c in stat_for_one_strategy.columns]
+        stat_for_one_strategy[f"Strategy_{suffix}"] = strategy.replace('- most C/E','').strip()
+        stats_df_l.append(stat_for_one_strategy)
+    strategies_stats = pd.concat(stats_df_l,axis=1)
+    return strategies_stats
 
 def read_agout(fname):
     return pd.read_csv(fname,header=[0,1],index_col=[0])
@@ -76,7 +81,8 @@ for pid in range(500,501):
         be_agout = read_agout(fname)
         be_most_ce = _get_most_ce_strategy(be_agout)
         af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-                            [af_most_ce,be_most_ce.replace('- most C/E','').strip()])
+                            [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
+                            suffixes=("af","be"))
         af_qaly_stats.index=[loc_id]
         # fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*beAHA*'))[0]
         # be_qaly_stats = get_variable_stats_from_aggregated_outcome(fname,'QALY')
@@ -87,10 +93,3 @@ for pid in range(500,501):
     changed_res = changed_res.join(pd.concat(qaly_stats_l),how='left')
     changed_res.to_csv(
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
-
-af_qaly_stats
-strategies = [af_most_ce,be_most_ce.replace('- most C/E','').strip()]
-strategies
-var='QALY'
-for_join = af_agout.loc[var,af_agout.columns.get_level_values(0).isin(strategies)]
-for_join.to_frame().T
