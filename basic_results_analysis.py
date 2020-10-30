@@ -19,10 +19,16 @@ def get_basic_results(res_name):
 
 BEST_CENTER_COLS = ['BestCenterKey','BestCenterType']
 
+def read_agout(fname):
+    return pd.read_csv(fname,header=[0,1],index_col=[0])
+
+def _get_most_ce_strategy(agout):
+    return agout.columns[agout.columns.get_level_values('Strategy').str.find('most C/E')>-1][0][0]
+
 def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,suffixes=None):
     if strategies is None:
         # get most cost-effective strategy
-        most_ce = agout.columns[agout.columns.get_level_values('Strategy').str.find('most C/E')>-1][0][0]
+        most_ce =  _get_most_ce_strategy(agout)
         for_join = agout.loc[var,most_ce].to_frame().T
         suffixes = ['af']
     # idx = pd.IndexSlice
@@ -35,13 +41,6 @@ def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,
         stats_df_l.append(stat_for_one_strategy)
     strategies_stats = pd.concat(stats_df_l,axis=1)
     return strategies_stats
-
-def read_agout(fname):
-    return pd.read_csv(fname,header=[0,1],index_col=[0])
-
-def _get_most_ce_strategy(agout):
-    return agout.columns[agout.columns.get_level_values('Strategy').str.find('most C/E')>-1][0][0]
-
 
 for pid in range(500,501):
     print(pid)
