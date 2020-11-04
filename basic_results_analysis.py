@@ -105,7 +105,7 @@ for pid in range(250,251):
         if be_most_ce not in af_agout.columns.get_level_values(0):
             af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
                             strategies=[af_most_ce],
-                            suffixes=("af"))
+                            suffixes=["af"])
 
 
         # if be_input not in af_agout.columns.get_level_values(0):
