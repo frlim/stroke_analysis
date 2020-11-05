@@ -90,34 +90,22 @@ for pid in range(250,251):
         # af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
         #                    [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
         #                    suffixes=("af","be"))
-        
-        # Issue with this code chunk is suffix = "a" not "af"
-        # if be_most_ce.replace('- most C/E','').strip() in af_agout.columns.get_level_values(0):
-        #      af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                      [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
-        #                      suffixes=("af","be"))
-        # else:
-        #      af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                      [af_most_ce],
-        #                      suffixes="af")
 
         # This chunk runs but be columns are all empty
-        if be_most_ce not in af_agout.columns.get_level_values(0):
-            af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-                            strategies=[af_most_ce],
-                            suffixes=["af"])
-
-
-        # if be_input not in af_agout.columns.get_level_values(0):
-        #     print("if")
+        # if be_most_ce not in af_agout.columns.get_level_values(0):
         #     af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                     strategies=[ac_most_ce],
-        #                     suffixes=("af"))
-        # else:
-        #     print("else")
-        #     af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                     strategies=[af_input,be_input.replace('- most C/E','').strip()],
-        #                     suffixes=("af","be"))
+        #                     strategies=[af_most_ce],
+        #                     suffixes=["af"])
+
+        # If strategy name not in af_agout columns, only summarize af QALYs
+        if be_most_ce.replace('- most C/E','').strip() in af_agout.columns.get_level_values(0):
+             af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+                             [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
+                             suffixes=["af","be"])
+        else:
+             af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+                             [af_most_ce],
+                             suffixes=["af"])
         
         af_qaly_stats.index=[loc_id] # a dataframe
         # fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*beAHA*'))[0]
