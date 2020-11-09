@@ -115,5 +115,10 @@ for pid in range(250,251):
         qaly_stats_l.append(af_qaly_stats)
     
     changed_res = changed_res.join(pd.concat(qaly_stats_l),how='left')
+    
+    # Create column for difference in mean QALYs
+    # mean_QALY_af - mean_QALY_be
+    changed_res['diff_QALY'] = changed_res['mean_QALY_af'] - changed_res['mean_QALY_be']
+
     changed_res.to_csv(
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
