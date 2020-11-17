@@ -1,6 +1,7 @@
 import data_io
 import pandas as pd
 import parameters as param
+import re
 
 # See files that are downloaded
 # out = glob.glob(str(data_io.LOCAL_OUTPUT/
@@ -8,10 +9,11 @@ import parameters as param
 # np.sort(out)
 
 def get_basic_results(res_name):
-
     res = pd.read_csv(res_name,index_col='Location')
     center_cols = res.columns[9:]
-    res['BestCenter'] = res[center_cols].idxmax(axis=1)
+    # Returns Best Center Key for each location
+    res['BestCenter'] = res[center_cols].idxmax(axis=1) # idxmax: return index of maximum in each row
+    # Extract Center Key and Type from BestCenter column
     res['BestCenterType'] = res['BestCenter'].apply(lambda x: "CSC" if x.split(' ')
                                                     [1] == '(CSC)' else "PSC")
     res['BestCenterKey'] = res['BestCenter'].apply(lambda x: x.split(' ')[0])
@@ -27,7 +29,7 @@ def _get_most_ce_strategy(agout):
 
 def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,suffixes=None):
     if strategies is None:
-        # get most cost-effective strategy
+        # get most cost-effective strategy (one strategy for each file)
         most_ce =  _get_most_ce_strategy(agout)
         for_join = agout.loc[var,most_ce].to_frame().T
         suffixes = ['af']
@@ -45,13 +47,16 @@ def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,
 for pid in range(250,251):
     # get after AHA result
     res_name = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*_afAHA.csv'))[0]
-    a_res, center_cols = get_basic_results(res_name)
+    a_res, center_cols = get_basic_results(res_name) # res = dataframe w/ best type & keys , center_cols = all strategy columns
+
     # get before AHA result
     res_name = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*_beAHA.csv'))[0]
     b_res, center_cols = get_basic_results(res_name)
 
+    # Dataframe of before and after best center key/type for every location
     ab_res = b_res[BEST_CENTER_COLS].join(a_res[BEST_CENTER_COLS],
                                            rsuffix='_af',lsuffix='_be')
+
     # get list of all possible hospitals to go to, (where cell value is not nan)
     # ab_res = ab_res.join(
     #     pd.DataFrame.from_dict({
@@ -73,12 +78,12 @@ for pid in range(250,251):
     qaly_stats_l = []
     # Iterate throughout each location that changed which was the best place to go to
     for loc_id in changed_res.index:
-        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*afAHA*'))[0]
-        af_agout = read_agout(fname)
+        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_afAHA*'))[0]
+        af_agout = read_agout(fname) # each individual output file
         # Get the most cost effective strategy - after (af)
         af_most_ce = _get_most_ce_strategy(af_agout)
 
-        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*beAHA*'))[0]
+        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_beAHA*'))[0]
         be_agout = read_agout(fname)
         # Get the most cost effective strategy - before (be)
         be_most_ce = _get_most_ce_strategy(be_agout)
@@ -91,7 +96,7 @@ for pid in range(250,251):
         #                    [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
         #                    suffixes=("af","be"))
 
-        # This chunk runs but be columns are all empty
+        # Note: This chunk runs but be columns are all empty
         # if be_most_ce not in af_agout.columns.get_level_values(0):
         #     af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
         #                     strategies=[af_most_ce],
