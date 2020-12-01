@@ -8,9 +8,10 @@ import json
 import re
 import argparse
 
-stroke_locations_data_path = Path('/Users/Ryan/Stroke_scripts/stroke_locations/data')
+#stroke_locations_data_path = Path('/Users/Ryan/Stroke_scripts/stroke_locations/data')
+stroke_locations_data_path = Path('/Volumes/dom_dgm_hur$/stroke_data/model_data/stroke_location/data')
 fname = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv')
-model_output_path = Path('/Users/Ryan/Stroke_scripts/stroke_model_output/output_072820')
+model_output_path = Path('/Users/francescalim/Desktop/stroke_model/outputs/stroke_output_pid_250') # input files
 print(f'Reading output from {model_output_path}')
 points_p=stroke_locations_data_path/'points'/fname
 hospitals_p=data_io.DTN_PATH /'hospital_address_NE_for_stroke_locations.csv',
@@ -108,7 +109,7 @@ def plot(lat,lon,addy,count_by_centers,plotpath):
 
     py.plot(fig, filename=plotpath)
 
-def main(pid=0,version='afAHA',loc_id='L298'):
+def main(pid=250,version='afAHA',loc_id='L01'):
     points = pd.read_csv(points_p,index_col='LOC_ID')
     lat,lon = points.loc[loc_id,['Latitude','Longitude']].values
     addy,keys = get_hospital_addy_and_keys()
