@@ -2,6 +2,10 @@ import data_io
 import pandas as pd
 import parameters as param
 import re
+import time
+from tqdm import tqdm
+
+start_time = time.time()
 
 # See files that are downloaded
 # out = glob.glob(str(data_io.LOCAL_OUTPUT/
@@ -10,7 +14,7 @@ import re
 
 def get_basic_results(res_name):
     res = pd.read_csv(res_name,index_col='Location')
-    center_cols = res.columns[9:]
+    center_cols = res.columns[10:] # only columns of hospital keys
     # Returns Best Center Key for each location
     res['BestCenter'] = res[center_cols].idxmax(axis=1) # idxmax: return index of maximum in each row
     # Extract Center Key and Type from BestCenter column
@@ -44,10 +48,10 @@ def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,
     strategies_stats = pd.concat(stats_df_l,axis=1)
     return strategies_stats
 
-for pid in range(250,251):
+for pid in tqdm(range(250,251)):
     # get after AHA result
     res_name = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*_afAHA.csv'))[0]
-    a_res, center_cols = get_basic_results(res_name) # res = dataframe w/ best type & keys , center_cols = all strategy columns
+    a_res, center_cols = get_basic_results(res_name) # res = dataframe w/ best type & keys , center_cols = all host location columns
 
     # get before AHA result
     res_name = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*_beAHA.csv'))[0]
@@ -57,14 +61,15 @@ for pid in range(250,251):
     ab_res = b_res[BEST_CENTER_COLS].join(a_res[BEST_CENTER_COLS],
                                            rsuffix='_af',lsuffix='_be')
 
+    # center_cols is the same for both be and af AHA
     # get list of all possible hospitals to go to, (where cell value is not nan)
-    # ab_res = ab_res.join(
-    #     pd.DataFrame.from_dict({
-    #         idx: ','.join(center_cols[row.notna()])
-    #         for idx, row in b_res[center_cols].iterrows()
-    #     },
-    #                            orient='index',
-    #                            columns=['AllOptions']))
+    ab_res = ab_res.join(
+        pd.DataFrame.from_dict({
+            idx: ','.join(center_cols[row.notna()])
+            for idx, row in b_res[center_cols].iterrows()
+        },
+                               orient='index',
+                               columns=['AllOptions']))
     ab_res.to_csv(
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace(
             'beAHA', 'summarized.csv'))
@@ -127,3 +132,6 @@ for pid in range(250,251):
 
     changed_res.to_csv(
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
+
+
+print("Code took", time.time() - start_time, "to run")

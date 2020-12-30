@@ -1,0 +1,151 @@
+,STNAME,CTYNAME,POPESTIMATE2019,FIPS
+1,Connecticut,Fairfield County,943332,09001
+2,Connecticut,Hartford County,891720,09003
+3,Connecticut,Litchfield County,180333,09005
+4,Connecticut,Middlesex County,162436,09007
+5,Connecticut,New Haven County,854757,09009
+6,Connecticut,New London County,265206,09011
+7,Connecticut,Tolland County,150721,09013
+8,Connecticut,Windham County,116782,09015
+10,Maine,Androscoggin County,108277,23001
+11,Maine,Aroostook County,67055,23003
+12,Maine,Cumberland County,295003,23005
+13,Maine,Franklin County,30199,23007
+14,Maine,Hancock County,54987,23009
+15,Maine,Kennebec County,122302,23011
+16,Maine,Knox County,39772,23013
+17,Maine,Lincoln County,34634,23015
+18,Maine,Oxford County,57975,23017
+19,Maine,Penobscot County,152148,23019
+20,Maine,Piscataquis County,16785,23021
+21,Maine,Sagadahoc County,35856,23023
+22,Maine,Somerset County,50484,23025
+23,Maine,Waldo County,39715,23027
+24,Maine,Washington County,31379,23029
+25,Maine,York County,207641,23031
+27,Massachusetts,Barnstable County,212990,25001
+28,Massachusetts,Berkshire County,124944,25003
+29,Massachusetts,Bristol County,565217,25005
+30,Massachusetts,Dukes County,17332,25007
+31,Massachusetts,Essex County,789034,25009
+32,Massachusetts,Franklin County,70180,25011
+33,Massachusetts,Hampden County,466372,25013
+34,Massachusetts,Hampshire County,160830,25015
+35,Massachusetts,Middlesex County,1611699,25017
+36,Massachusetts,Nantucket County,11399,25019
+37,Massachusetts,Norfolk County,706775,25021
+38,Massachusetts,Plymouth County,521202,25023
+39,Massachusetts,Suffolk County,803907,25025
+40,Massachusetts,Worcester County,830622,25027
+42,New Hampshire,Belknap County,61303,33001
+43,New Hampshire,Carroll County,48910,33003
+44,New Hampshire,Cheshire County,76085,33005
+45,New Hampshire,Coos County,31563,33007
+46,New Hampshire,Grafton County,89886,33009
+47,New Hampshire,Hillsborough County,417025,33011
+48,New Hampshire,Merrimack County,151391,33013
+49,New Hampshire,Rockingham County,309769,33015
+50,New Hampshire,Strafford County,130633,33017
+51,New Hampshire,Sullivan County,43146,33019
+53,New Jersey,Atlantic County,263670,34001
+54,New Jersey,Bergen County,932202,34003
+55,New Jersey,Burlington County,445349,34005
+56,New Jersey,Camden County,506471,34007
+57,New Jersey,Cape May County,92039,34009
+58,New Jersey,Cumberland County,149527,34011
+59,New Jersey,Essex County,798975,34013
+60,New Jersey,Gloucester County,291636,34015
+61,New Jersey,Hudson County,672391,34017
+62,New Jersey,Hunterdon County,124371,34019
+63,New Jersey,Mercer County,367430,34021
+64,New Jersey,Middlesex County,825062,34023
+65,New Jersey,Monmouth County,618795,34025
+66,New Jersey,Morris County,491845,34027
+67,New Jersey,Ocean County,607186,34029
+68,New Jersey,Passaic County,501826,34031
+69,New Jersey,Salem County,62385,34033
+70,New Jersey,Somerset County,328934,34035
+71,New Jersey,Sussex County,140488,34037
+72,New Jersey,Union County,556341,34039
+73,New Jersey,Warren County,105267,34041
+75,New York,Albany County,305506,36001
+76,New York,Allegany County,46091,36003
+77,New York,Bronx County,1418207,36005
+78,New York,Broome County,190488,36007
+79,New York,Cattaraugus County,76117,36009
+80,New York,Cayuga County,76576,36011
+81,New York,Chautauqua County,126903,36013
+82,New York,Chemung County,83456,36015
+83,New York,Chenango County,47207,36017
+84,New York,Clinton County,80485,36019
+85,New York,Columbia County,59461,36021
+86,New York,Cortland County,47581,36023
+87,New York,Delaware County,44135,36025
+88,New York,Dutchess County,294218,36027
+89,New York,Erie County,918702,36029
+90,New York,Essex County,36885,36031
+91,New York,Franklin County,50022,36033
+92,New York,Fulton County,53383,36035
+93,New York,Genesee County,57280,36037
+94,New York,Greene County,47188,36039
+95,New York,Hamilton County,4416,36041
+96,New York,Herkimer County,61319,36043
+97,New York,Jefferson County,109834,36045
+98,New York,Kings County,2559903,36047
+99,New York,Lewis County,26296,36049
+100,New York,Livingston County,62914,36051
+101,New York,Madison County,70941,36053
+102,New York,Monroe County,741770,36055
+103,New York,Montgomery County,49221,36057
+104,New York,Nassau County,1356924,36059
+105,New York,New York County,1628706,36061
+106,New York,Niagara County,209281,36063
+107,New York,Oneida County,228671,36065
+108,New York,Onondaga County,460528,36067
+109,New York,Ontario County,109777,36069
+110,New York,Orange County,384940,36071
+111,New York,Orleans County,40352,36073
+112,New York,Oswego County,117124,36075
+113,New York,Otsego County,59493,36077
+114,New York,Putnam County,98320,36079
+115,New York,Queens County,2253858,36081
+116,New York,Rensselaer County,158714,36083
+117,New York,Richmond County,476143,36085
+118,New York,Rockland County,325789,36087
+119,New York,St. Lawrence County,107740,36089
+120,New York,Saratoga County,229863,36091
+121,New York,Schenectady County,155299,36093
+122,New York,Schoharie County,30999,36095
+123,New York,Schuyler County,17807,36097
+124,New York,Seneca County,34016,36099
+125,New York,Steuben County,95379,36101
+126,New York,Suffolk County,1476601,36103
+127,New York,Sullivan County,75432,36105
+128,New York,Tioga County,48203,36107
+129,New York,Tompkins County,102180,36109
+130,New York,Ulster County,177573,36111
+131,New York,Warren County,63944,36113
+132,New York,Washington County,61204,36115
+133,New York,Wayne County,89918,36117
+134,New York,Westchester County,967506,36119
+135,New York,Wyoming County,39859,36121
+136,New York,Yates County,24913,36123
+138,Rhode Island,Bristol County,48479,44001
+139,Rhode Island,Kent County,164292,44003
+140,Rhode Island,Newport County,82082,44005
+141,Rhode Island,Providence County,638931,44007
+142,Rhode Island,Washington County,125577,44009
+144,Vermont,Addison County,36777,50001
+145,Vermont,Bennington County,35470,50003
+146,Vermont,Caledonia County,29993,50005
+147,Vermont,Chittenden County,163774,50007
+148,Vermont,Essex County,6163,50009
+149,Vermont,Franklin County,49402,50011
+150,Vermont,Grand Isle County,7235,50013
+151,Vermont,Lamoille County,25362,50015
+152,Vermont,Orange County,28892,50017
+153,Vermont,Orleans County,27037,50019
+154,Vermont,Rutland County,58191,50021
+155,Vermont,Washington County,58409,50023
+156,Vermont,Windham County,42222,50025
+157,Vermont,Windsor County,55062,50027

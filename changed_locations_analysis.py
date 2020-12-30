@@ -3,6 +3,10 @@
 
 import pandas as pd
 import data_io
+import time
+from tqdm import tqdm
+
+start_time = time.time()
 
 # Initialize dictionary for center key
 loc_dict = {}
@@ -16,7 +20,7 @@ def is_changed_key(row):
     else:
         return 0
 
-for pid in range(250,251):
+for pid in tqdm(range(250,276)):
     # Get pathnanme for summarized csv file
     all_loc_path = list(data_io.BASIC_ANALYSIS_OUTPUT.glob(f'pid={pid}*_summarized.csv'))[0]
 
@@ -42,5 +46,5 @@ loc_df["Prop_Changed"] = loc_df['Changed'] / (loc_df['Changed'] + loc_df['No_Cha
 # Write to csv
 loc_df.to_csv(str(data_io.LOCATION_ANALYSIS_OUTPUT) + '/location_key_changes.csv')
 
-    
+print("changed_locations_analysis.py took", time.time() - start_time, "to run")
 

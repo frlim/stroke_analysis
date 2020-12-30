@@ -10,15 +10,15 @@ import argparse
 
 #stroke_locations_data_path = Path('/Users/Ryan/Stroke_scripts/stroke_locations/data')
 stroke_locations_data_path = Path('/Volumes/dom_dgm_hur$/stroke_data/model_data/stroke_location/data')
-fname = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv')
+fname = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv') # latitude/longitude for all 1000 locations
 model_output_path = Path('/Users/francescalim/Desktop/stroke_model/outputs/stroke_output_pid_250') # input files
 print(f'Reading output from {model_output_path}')
 points_p=stroke_locations_data_path/'points'/fname
 hospitals_p=data_io.DTN_PATH /'hospital_address_NE_for_stroke_locations.csv',
 
 MAPBOX_TOKEN = json.loads(open('config/mapbox.json').readline())['token']
-addy_path = data_io.DTN_PATH / f'hospital_address_NE_for_stroke_locations.csv'
-key_path = data_io.DTN_PATH / f'hospital_keys_master_v2.csv'
+addy_path = data_io.DTN_PATH / f'hospital_address_NE_for_stroke_locations.csv' # hospital type, lat/long, transfer_time
+key_path = data_io.DTN_PATH / f'hospital_keys_master_v2.csv' # match hospital key (K1) to hospital id in addy_path
 
 def get_hospital_addy_and_keys():
     addy = pd.read_csv(addy_path, sep='|')
@@ -39,7 +39,7 @@ def read_outcome_file(pid,version,model_output_path=model_output_path):
     # Get right file based on input args
     model_fname = model_fnames[0]
     print(model_fname.stem)
-    optimal_counts = pd.read_csv(model_output_path/model_fname,index_col='Location')
+    optimal_counts = pd.read_csv(model_output_path/model_fname,index_col='Location') # non aggregated outcome
     # drop patient profile columns
     center_cols = optimal_counts.columns[ [_is_a_center(c) for c in optimal_counts.columns]]
     optimal_counts = optimal_counts[center_cols]
@@ -109,7 +109,7 @@ def plot(lat,lon,addy,count_by_centers,plotpath):
 
     py.plot(fig, filename=plotpath)
 
-def main(pid=250,version='afAHA',loc_id='L01'):
+def main(pid=250,version='afAHA',loc_id='L298'):
     points = pd.read_csv(points_p,index_col='LOC_ID')
     lat,lon = points.loc[loc_id,['Latitude','Longitude']].values
     addy,keys = get_hospital_addy_and_keys()
@@ -126,3 +126,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(vars(args))
     main(**vars(args))
+
+# INPUT: visualize_optimal_counts.py 250 afAHA L1

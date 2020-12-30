@@ -8,8 +8,9 @@ import plotly.offline as py
 import json
 import re
 
-stroke_locations_data_path = Path('/Users/Ryan/Stroke_scripts/stroke_locations/data')
-fname = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv')
+#stroke_locations_data_path = Path('/Users/Ryan/Stroke_scripts/stroke_locations/data')
+stroke_locations_data_path = Path('/Volumes/dom_dgm_hur$/stroke_data/model_data/stroke_location/data')
+fname = Path('NY_MA_NJ_CT_NH_RI_ME_VT_n=10000.csv') # latitude/longitude for all 1000 locations
 points = pd.read_csv(stroke_locations_data_path/'points'/fname,index_col='LOC_ID')
 chosen_locs = [f'L{i}' for i in range(1000)]
 points = points.loc[chosen_locs,:]
