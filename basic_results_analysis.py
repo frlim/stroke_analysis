@@ -48,7 +48,7 @@ def get_variable_stats_from_aggregated_outcome(agout,var='QALY',strategies=None,
     strategies_stats = pd.concat(stats_df_l,axis=1)
     return strategies_stats
 
-for pid in tqdm(range(250,251)):
+for pid in tqdm(range(537,581)):
     # get after AHA result
     res_name = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*_afAHA.csv'))[0]
     a_res, center_cols = get_basic_results(res_name) # res = dataframe w/ best type & keys , center_cols = all host location columns
@@ -63,13 +63,13 @@ for pid in tqdm(range(250,251)):
 
     # center_cols is the same for both be and af AHA
     # get list of all possible hospitals to go to, (where cell value is not nan)
-    ab_res = ab_res.join(
-        pd.DataFrame.from_dict({
-            idx: ','.join(center_cols[row.notna()])
-            for idx, row in b_res[center_cols].iterrows()
-        },
-                               orient='index',
-                               columns=['AllOptions']))
+    # ab_res = ab_res.join(
+    #     pd.DataFrame.from_dict({
+    #         idx: ','.join(center_cols[row.notna()])
+    #         for idx, row in b_res[center_cols].iterrows()
+    #     },
+    #                            orient='index',
+    #                            columns=['AllOptions']))
     ab_res.to_csv(
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace(
             'beAHA', 'summarized.csv'))
@@ -81,57 +81,60 @@ for pid in tqdm(range(250,251)):
         data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
 
     qaly_stats_l = []
-    # Iterate throughout each location that changed which was the best place to go to
-    for loc_id in changed_res.index:
-        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_afAHA*'))[0]
-        af_agout = read_agout(fname) # each individual output file
-        # Get the most cost effective strategy - after (af)
-        af_most_ce = _get_most_ce_strategy(af_agout)
+    if changed_res.shape[0] != 0: # only run if changes exist
+        # Iterate throughout each location that changed which was the best place to go to
+        for loc_id in changed_res.index:
+            fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_afAHA*'))[0]
+            af_agout = read_agout(fname) # each individual output file
+            # Get the most cost effective strategy - after (af)
+            af_most_ce = _get_most_ce_strategy(af_agout)
 
-        fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_beAHA*'))[0]
-        be_agout = read_agout(fname)
-        # Get the most cost effective strategy - before (be)
-        be_most_ce = _get_most_ce_strategy(be_agout)
+            fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}_beAHA*'))[0]
+            be_agout = read_agout(fname)
+            # Get the most cost effective strategy - before (be)
+            be_most_ce = _get_most_ce_strategy(be_agout)
 
-        # ORIGINAL CODE
-        # Note: not working because be site name won't appear in af_agout strategy columns
-        # Might happen because hospital treatment time is so long it passes the limit a stroke
-        # patient can get treatment
-        # af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                    [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
-        #                    suffixes=("af","be"))
+            # ORIGINAL CODE
+            # Note: not working because be site name won't appear in af_agout strategy columns
+            # Might happen because hospital treatment time is so long it passes the limit a stroke
+            # patient can get treatment
+            # af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+            #                    [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
+            #                    suffixes=("af","be"))
 
-        # Note: This chunk runs but be columns are all empty
-        # if be_most_ce not in af_agout.columns.get_level_values(0):
-        #     af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-        #                     strategies=[af_most_ce],
-        #                     suffixes=["af"])
+            # Note: This chunk runs but be columns are all empty
+            # if be_most_ce not in af_agout.columns.get_level_values(0):
+            #     af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+            #                     strategies=[af_most_ce],
+            #                     suffixes=["af"])
 
-        # If strategy name not in af_agout columns, only summarize af QALYs
-        if be_most_ce.replace('- most C/E','').strip() in af_agout.columns.get_level_values(0):
-             af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-                             [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
-                             suffixes=["af","be"])
-        else:
-             af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
-                             [af_most_ce],
-                             suffixes=["af"])
-        
-        af_qaly_stats.index=[loc_id] # a dataframe
-        # fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*beAHA*'))[0]
-        # be_qaly_stats = get_variable_stats_from_aggregated_outcome(fname,'QALY')
-        # be_qaly_stats.index=[loc_id]
-        # qaly_stats = be_qaly_stats.join(af_qaly_stats,lsuffix='_be',rsuffix='_af')
-        qaly_stats_l.append(af_qaly_stats)
+            # If strategy name not in af_agout columns, only summarize af QALYs
+            if be_most_ce.replace('- most C/E','').strip() in af_agout.columns.get_level_values(0):
+                af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+                                [af_most_ce,be_most_ce.replace('- most C/E','').strip()],
+                                suffixes=["af","be"])
+            else:
+                print("Missing Strategy: ", be_most_ce)
+                print("for location ", loc_id, "and patient ", pid)
+                af_qaly_stats = get_variable_stats_from_aggregated_outcome(af_agout,'QALY',
+                                [af_most_ce],
+                                suffixes=["af"])
+            
+            af_qaly_stats.index=[loc_id] # a dataframe
+            # fname = list(data_io.LOCAL_OUTPUT.glob(f'pid={pid}*loc={loc_id}*beAHA*'))[0]
+            # be_qaly_stats = get_variable_stats_from_aggregated_outcome(fname,'QALY')
+            # be_qaly_stats.index=[loc_id]
+            # qaly_stats = be_qaly_stats.join(af_qaly_stats,lsuffix='_be',rsuffix='_af')
+            qaly_stats_l.append(af_qaly_stats)
+
+        changed_res = changed_res.join(pd.concat(qaly_stats_l),how='left')
     
-    changed_res = changed_res.join(pd.concat(qaly_stats_l),how='left')
-    
-    # Create column for difference in mean QALYs
-    # mean_QALY_af - mean_QALY_be
-    changed_res['diff_QALY'] = changed_res['mean_QALY_af'] - changed_res['mean_QALY_be']
+        # Create column for difference in mean QALYs
+        # mean_QALY_af - mean_QALY_be
+        changed_res['diff_QALY'] = changed_res['mean_QALY_af'] - changed_res['mean_QALY_be']
 
-    changed_res.to_csv(
-        data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
+        changed_res.to_csv(
+            data_io.BASIC_ANALYSIS_OUTPUT / res_name.stem.replace('beAHA','changed.csv'))
 
 
 print("Code took", time.time() - start_time, "to run")
