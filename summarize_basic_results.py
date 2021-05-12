@@ -10,6 +10,8 @@ import scipy.stats as stats
 # Load location-rural data
 rural_loc = pd.read_csv("data/rural/cbsa_rural_locid.csv")
 rural_loc = rural_loc.iloc[:,[0,-1]]
+# Only look at first 500 locations
+rural_loc = rural_loc.iloc[0:500,:]
 
 # Summarize rural locations
 rural_summ = rural_loc['is_rural'].mean() * 100
@@ -58,12 +60,15 @@ loc_csc_to_psc_dict = {}
 loc_group_dict = {}
 loc_agree_dict = {}
 
-for pid in [i for j in (range(250,294), range(500,581)) for i in j]:
+pid_list = [i for j in (range(250, 325), range(326, 370), range(371,372), range(373,1000)) for i in j]
+for pid in pid_list:
     # Get pathnanme for summarized csv file
     all_loc_path = list(data_io.BASIC_ANALYSIS_OUTPUT.glob(f'pid={pid}*_summarized.csv'))[0]
 
     # Read csv
     all_loc = pd.read_csv(all_loc_path)
+    # Only look at first 500 locations
+    all_loc = all_loc.iloc[0:500,:]
 
     # Dataframe of rows that had same or different hospital key
     unchanged = all_loc[all_loc['BestCenterKey_be']==all_loc['BestCenterKey_af']]
@@ -77,9 +82,13 @@ for pid in [i for j in (range(250,294), range(500,581)) for i in j]:
     num_unchanged = unchanged.shape[0]
     num_changed = changed.shape[0]
 
-    # Make sure for each pid, total number of 1000 recommendations
-    if num_unchanged + num_changed != 1000:
-        print("Error: Doesn't add to 1000")
+    # Make sure for each pid, total number of 500 recommendations
+    if num_unchanged + num_changed != 500:
+        print("Error: Doesn't add to 500")
+
+    # # Make sure for each pid, total number of 1000 recommendations
+    # if num_unchanged + num_changed != 1000:
+    #     print("Error: Doesn't add to 1000")
     
     # Further analysis into the changed recommendations
     # Look into how many hospital keys changed from psc to csc, csc to psc, or changed hospital key within same center type
@@ -206,12 +215,6 @@ for key, value in agree_dict.items():
 if agree_df.shape[0] != sum(unchanged_lst):
     print("Error: Dataframe agree_df does not have expected number of rows")
 
-# Write to csv for R p-value verification
-agree_df.to_csv("output_data/2_5_21/V1_V2_agree.csv", index=False)
-psc_to_csc_df.to_csv("output_data/2_5_21/psc_to_csc.csv", index=False)
-csc_to_psc_df.to_csv("output_data/2_5_21/csc_to_psc.csv", index=False)
-group_df.to_csv("output_data/2_5_21/within_group_change.csv", index=False)
-
 # List of dataframes for each recommendation change containing pids and their information
 all_df = [agree_df, psc_to_csc_df, csc_to_psc_df, group_df]
 
@@ -280,12 +283,6 @@ rural_perc = [x['is_rural'].mean() * 100 for x in all_loc_df]
 char_df.loc['Rural Location, n'] = rural_array
 char_df.loc['Rural Location, %'] = rural_perc
 
-# Write to csv for R p-value verification
-loc_agree_df.to_csv("output_data/2_5_21/loc_V1_V2_agree.csv", index=False)
-loc_psc_to_csc_df.to_csv("output_data/2_5_21/loc_psc_to_csc.csv", index=False)
-loc_csc_to_psc_df.to_csv("output_data/2_5_21/loc_csc_to_psc.csv", index=False)
-loc_group_df.to_csv("output_data/2_5_21/loc_within_group_change.csv", index=False)
-
 # Median travel time to closest PSC/CSC
 # Closest hospital is PSC or CSC
 # Median tPA for closest hospital
@@ -346,22 +343,12 @@ time_loc_psc_to_csc_df.to_csv("output_data/2_5_21/time_loc_psc_to_csc.csv", inde
 time_loc_csc_to_psc_df.to_csv("output_data/2_5_21/time_loc_csc_to_psc.csv", index=False)
 time_loc_group_df.to_csv("output_data/2_5_21/time_loc_within_group_change.csv", index=False)
 
-# for var in var_list:
-#     fvalue, pvalue = stats.f_oneway(agree_df[var], psc_to_csc_df[var], csc_to_psc_df[var], group_df[var])
-#     p_value_lst.append(pvalue)
-
-# pvals_df = pd.DataFrame(columns=['var', 'p-value'])
-# pvals_df['var'] = var_list
-# pvals_df['p-value'] = p_value_lst
-# pvals_df.set_index('var', inplace=True)
-
 # Write to Excel
-with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_2_25_21.xlsx') as writer:  
+with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_051221.xlsx') as writer:  
     summ_stats.to_excel(writer, sheet_name ='Overall Patient Traits')
     rural_df.to_excel(writer, sheet_name="Rural Loc")
     overall_df.to_excel(writer, sheet_name='Overall Recs')
     changed_df.to_excel(writer, sheet_name='Changed Recs')
     char_df.to_excel(writer, sheet_name='Stratified Characteristics')
-    #pvals_df.to_excel(writer, sheet_name='p-values')
 
 
