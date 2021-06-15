@@ -7,6 +7,11 @@ from pathlib import Path
 import numpy as np
 import scipy.stats as stats
 
+# Define patient subset
+# pid_list = [i for j in (range(50,103), range(250, 325), range(326, 370), range(371,372), 
+#             range(373,1000)) for i in j]
+pid_list = [253]
+
 # Load location-rural data
 rural_loc = pd.read_csv("data/rural/cbsa_rural_locid.csv")
 rural_loc = rural_loc.iloc[:,[0,-1]]
@@ -24,6 +29,8 @@ travel_time = pd.read_csv("data/hosp_characteristics/hosp_data_each_loc.csv")
 # Patient Characteristics Distribution
 stroke_patients_data = Path('/Volumes/dom_dgm_hur$/stroke_data/processed_data')
 patients = pd.read_csv(stroke_patients_data/"patient_profiles_01_30_20.csv") # load patient profile data
+# Only grab patients who are included in the analysis
+patients = patients[patients.ID.isin(pid_list)]
 
 # Get mean, median, std, min, max for age, nihss, time_since_symptoms from patient profile data
 # summ_stats: summary statistics of entire patient population
@@ -60,7 +67,12 @@ loc_csc_to_psc_dict = {}
 loc_group_dict = {}
 loc_agree_dict = {}
 
-pid_list = [i for j in (range(250, 325), range(326, 370), range(371,372), range(373,1000)) for i in j]
+# Initialize counts for number of V1 and V2 PSC/CSC recommendations
+v1_psc_recs = 0
+v1_csc_recs = 0
+v2_psc_recs = 0
+v2_csc_recs = 0
+
 for pid in pid_list:
     # Get pathnanme for summarized csv file
     all_loc_path = list(data_io.BASIC_ANALYSIS_OUTPUT.glob(f'pid={pid}*_summarized.csv'))[0]
@@ -69,6 +81,16 @@ for pid in pid_list:
     all_loc = pd.read_csv(all_loc_path)
     # Only look at first 500 locations
     all_loc = all_loc.iloc[0:500,:]
+
+    # Get counts for CSC and PSC for V1 and V2 model
+    if 'CSC' in all_loc['BestCenterType_be'].value_counts().index.tolist():
+        v1_csc_recs += all_loc['BestCenterType_be'].value_counts()['CSC']
+    if 'PSC' in all_loc['BestCenterType_be'].value_counts().index.tolist():
+        v1_psc_recs += all_loc['BestCenterType_be'].value_counts()['PSC']
+    if 'CSC' in all_loc['BestCenterType_af'].value_counts().index.tolist():
+        v2_csc_recs += all_loc['BestCenterType_af'].value_counts()['CSC']
+    if 'PSC' in all_loc['BestCenterType_af'].value_counts().index.tolist():
+        v2_psc_recs += all_loc['BestCenterType_af'].value_counts()['PSC']
 
     # Dataframe of rows that had same or different hospital key
     unchanged = all_loc[all_loc['BestCenterKey_be']==all_loc['BestCenterKey_af']]
@@ -161,6 +183,23 @@ for pid in pid_list:
             loc_group_dict[locid] = 1
         else:
             loc_group_dict[locid] += 1
+
+# Get number/perc of csc/psc recommendations for V1 and V2
+# Double check that the number of recs is correct
+v1_recs = v1_psc_recs + v1_csc_recs
+v2_recs = v2_psc_recs + v2_csc_recs
+if v1_recs != len(pid_list) * 500:
+    print("Error: Number of V1 recommendations is incorrect")
+if v2_recs != len(pid_list) * 500:
+    print("Error: Number of V2 recommendations is incorrect")
+
+# Create dataframe for output
+rec_type = {'num_psc':[v1_psc_recs, v2_psc_recs],
+        'num_csc':[v1_csc_recs, v2_csc_recs],
+        "total_num":[v1_recs, v2_recs],
+        "perc_psc":[round(v1_psc_recs/v1_recs * 100,1), round(v2_psc_recs/v2_recs * 100,1)],
+        "perc_csc":[round(v1_csc_recs/v1_recs * 100,1), round(v2_csc_recs/v2_recs * 100,1)]}
+rec_type_df = pd.DataFrame(rec_type, index=['V1', 'V2'])
 
 # Initialize dataframe
 # All changes
@@ -337,16 +376,11 @@ median_tpa_iqr = [str(np.nanpercentile(x['IVTPA_MEDIAN'],
 char_df.loc['Median DTN time for tPA'] = median_tpa
 char_df.loc['Median DTN time for tPA, IQR'] = median_tpa_iqr
 
-# Write to csv for R p-value verification
-time_loc_agree_df.to_csv("output_data/2_5_21/time_loc_V1_V2_agree.csv", index=False)
-time_loc_psc_to_csc_df.to_csv("output_data/2_5_21/time_loc_psc_to_csc.csv", index=False)
-time_loc_csc_to_psc_df.to_csv("output_data/2_5_21/time_loc_csc_to_psc.csv", index=False)
-time_loc_group_df.to_csv("output_data/2_5_21/time_loc_within_group_change.csv", index=False)
-
 # Write to Excel
-with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_051221.xlsx') as writer:  
+with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_800p_061621.xlsx') as writer:  
     summ_stats.to_excel(writer, sheet_name ='Overall Patient Traits')
     rural_df.to_excel(writer, sheet_name="Rural Loc")
+    rec_type_df.to_excel(writer, sheet_name='Rec Types')
     overall_df.to_excel(writer, sheet_name='Overall Recs')
     changed_df.to_excel(writer, sheet_name='Changed Recs')
     char_df.to_excel(writer, sheet_name='Stratified Characteristics')
