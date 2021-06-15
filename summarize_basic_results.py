@@ -10,7 +10,7 @@ import scipy.stats as stats
 # Define patient subset
 # pid_list = [i for j in (range(50,103), range(250, 325), range(326, 370), range(371,372), 
 #             range(373,1000)) for i in j]
-pid_list = [253]
+pid_list = range(250,301)
 
 # Load location-rural data
 rural_loc = pd.read_csv("data/rural/cbsa_rural_locid.csv")
@@ -24,7 +24,7 @@ rural_data = {"Perc Rural": [rural_summ]}
 rural_df = pd.DataFrame(rural_data)
 
 # Load in closest hosp characteristic data
-travel_time = pd.read_csv("data/hosp_characteristics/hosp_data_each_loc.csv")
+travel_time = pd.read_csv("data/hosp_characteristics/hosp_data_each_loc_new.csv")
 
 # Patient Characteristics Distribution
 stroke_patients_data = Path('/Volumes/dom_dgm_hur$/stroke_data/processed_data')
@@ -72,6 +72,11 @@ v1_psc_recs = 0
 v1_csc_recs = 0
 v2_psc_recs = 0
 v2_csc_recs = 0
+
+# Initialize dictionary to get be hospital key for changes and af hospital key for changes
+# In order to compare DTN times
+be_hosp_key = {}
+af_hosp_key = {}
 
 for pid in pid_list:
     # Get pathnanme for summarized csv file
@@ -183,6 +188,19 @@ for pid in pid_list:
             loc_group_dict[locid] = 1
         else:
             loc_group_dict[locid] += 1
+
+    # Add hosp key for all changes to dictionary
+    for hosp_key in changed['BestCenterKey_be']:
+        if hosp_key not in be_hosp_key:
+            be_hosp_key[hosp_key] = 1
+        else:
+            be_hosp_key[hosp_key] += 1
+    
+    for hosp_key in changed['BestCenterKey_af']:
+        if hosp_key not in af_hosp_key:
+            af_hosp_key[hosp_key] = 1
+        else:
+            af_hosp_key[hosp_key] += 1
 
 # Get number/perc of csc/psc recommendations for V1 and V2
 # Double check that the number of recs is correct
@@ -373,16 +391,45 @@ char_df.loc['Closest Hospital is CSC, %'] = perc_closest_hosp_csc
 median_tpa = [x['IVTPA_MEDIAN'].median() for x in time_all_loc_df]
 median_tpa_iqr = [str(np.nanpercentile(x['IVTPA_MEDIAN'], 
                 25)) + ' - ' + str(np.nanpercentile(x['IVTPA_MEDIAN'], 75)) for x in time_all_loc_df]
-char_df.loc['Median DTN time for tPA'] = median_tpa
-char_df.loc['Median DTN time for tPA, IQR'] = median_tpa_iqr
+char_df.loc['Median DTN time for tPA of Closest Hospital'] = median_tpa
+char_df.loc['Median DTN time for tPA of Closest Hospital, IQR'] = median_tpa_iqr
+
+# Load in hosp_key and DTN time
+hosp_dtn = pd.read_csv("data/hosp_characteristics/hosp_ivtpa_time.csv")
+
+# Get Median DTN time for tPA of previous hospital recommendation compared to new hospital recommendation
+be_dtn = pd.DataFrame(columns=hosp_dtn.columns)
+for key, value in be_hosp_key.items():
+    row = hosp_dtn[hosp_dtn['HOSP_KEY']==key]
+    for i in range(0, value):
+        be_dtn = pd.concat([be_dtn, row])
+
+af_dtn = pd.DataFrame(columns=hosp_dtn.columns)
+for key, value in af_hosp_key.items():
+    row = hosp_dtn[hosp_dtn['HOSP_KEY']==key]
+    for i in range(0, value):
+        af_dtn = pd.concat([af_dtn, row])
+
+# Confirm we have the right number of hospitals
+if be_dtn.shape[0] == len(changed_lst) and af_dtn.shape[0] == len(changed_lst):
+    print("Error: Number of hospitals for DTN time analysis is wrong")
+
+# Add to dataframe
+be_median_dtn = be_dtn['IVTPA_MEDIAN'].median()
+af_median_dtn = af_dtn['IVTPA_MEDIAN'].median()
+
+dtn_df = {"V1_hosp_IVTPA": [be_median_dtn],
+          "V2_hosp_IVTPA": [af_median_dtn]}
+dtn_df = pd.DataFrame(dtn_df)
 
 # Write to Excel
-with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_800p_061621.xlsx') as writer:  
+with pd.ExcelWriter(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/basic_summary_50p_061621.xlsx') as writer:  
     summ_stats.to_excel(writer, sheet_name ='Overall Patient Traits')
     rural_df.to_excel(writer, sheet_name="Rural Loc")
     rec_type_df.to_excel(writer, sheet_name='Rec Types')
     overall_df.to_excel(writer, sheet_name='Overall Recs')
     changed_df.to_excel(writer, sheet_name='Changed Recs')
     char_df.to_excel(writer, sheet_name='Stratified Characteristics')
+    dtn_df.to_excel(writer, sheet_name='DTN Comparison')
 
 
