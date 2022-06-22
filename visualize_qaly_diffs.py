@@ -28,6 +28,13 @@ addy['MAPBOX_NAME'] = addy.HOSP_KEY + ' ' + addy.OrganizationName
 addy['MAPBOX_TYPE'] = addy.CenterType.map({'Comprehensive': 1, 'Primary': 0})
 addy = addy.set_index('HOSP_KEY')
 
+# Import percentage of center changes for each location
+qalys = pd.read_excel(str(data_io.SUMMARY_ANALYSIS_OUTPUT) + '/qaly_loc_summary.xlsx', 
+                index_col=0)
+qalys = qalys.iloc[:,0] # just grab qaly diff values
+# Merge to get perc of rec changes
+points = points.merge(qalys, how='inner', left_index=True, right_index=True)
+
 scatter_list = []
 
 scatter_list.append(
@@ -37,9 +44,11 @@ scatter_list.append(
                  hoverinfo='text',
                  mode='markers',
                  name='Patient Location',
-                 marker=go.scattermapbox.Marker(size=9,
-                                                opacity=0.5,
-                                                color='rgb(100,100,200)'))
+                 marker=dict(size=9,
+                             opacity=0.8,
+                             color=points.mean_diff_qaly,
+                             colorbar=dict(title="Mean Difference in QALYs Before and After"),
+                             colorscale='plasma'))
     )
 
 scatter_list.append(
@@ -77,26 +86,7 @@ fig.update_layout(legend=go.layout.Legend(x=0,
                                           bordercolor="Blue",
                                           borderwidth=2))
 
-py.plot(fig, filename=str(data_io.GRAPH_OUTPUT/f'{fname}_locations.html'))
+fig.write_image(str(data_io.GRAPH_OUTPUT) + '/static/qaly_diff_locations_2_11_21.png')
 
-# # for testing if symbol would show up
-#
-# fig = go.Figure(
-#     go.Scattermapbox(mode="markers",
-#                      lon=addy.Longitude,
-#                      lat=addy.Latitude,
-#                      marker={
-#                          'symbol': "pharmacy",
-#                          'size': 11
-#                      },
-#                      text=addy.MAPBOX_NAME))
-#
-# fig.update_layout(mapbox={
-#     'accesstoken': MAPBOX_TOKEN,
-#     'style': "light",
-#     'zoom': 5,
-#     "center": map_center
-# },
-#                   showlegend=False)
-# fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-# py.plot(fig, filename='sample_.html')
+py.plot(fig, filename=str(data_io.GRAPH_OUTPUT) + '/qaly_diff_locations_2_11_21.html')
+

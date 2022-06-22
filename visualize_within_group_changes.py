@@ -28,6 +28,13 @@ addy['MAPBOX_NAME'] = addy.HOSP_KEY + ' ' + addy.OrganizationName
 addy['MAPBOX_TYPE'] = addy.CenterType.map({'Comprehensive': 1, 'Primary': 0})
 addy = addy.set_index('HOSP_KEY')
 
+# Import percentage of center changes for each location
+changed_recs = pd.read_excel(str(data_io.LOCATION_ANALYSIS_OUTPUT) + '/location_key_changes.xlsx', 
+                sheet_name="Changed Only", index_col="Locations")
+changed_recs = changed_recs.iloc[:,6]
+# Merge to get perc of rec changes
+points = points.merge(changed_recs, left_index=True, right_index=True)
+
 scatter_list = []
 
 scatter_list.append(
@@ -37,9 +44,11 @@ scatter_list.append(
                  hoverinfo='text',
                  mode='markers',
                  name='Patient Location',
-                 marker=go.scattermapbox.Marker(size=9,
-                                                opacity=0.5,
-                                                color='rgb(100,100,200)'))
+                 marker=dict(size=9,
+                             opacity=0.8,
+                             color=points.Prop_Within_Group_Change,
+                             colorbar=dict(title="Proportion of Same Center Type Changes"),
+                             colorscale='plasma'))
     )
 
 scatter_list.append(
@@ -77,26 +86,4 @@ fig.update_layout(legend=go.layout.Legend(x=0,
                                           bordercolor="Blue",
                                           borderwidth=2))
 
-py.plot(fig, filename=str(data_io.GRAPH_OUTPUT/f'{fname}_locations.html'))
-
-# # for testing if symbol would show up
-#
-# fig = go.Figure(
-#     go.Scattermapbox(mode="markers",
-#                      lon=addy.Longitude,
-#                      lat=addy.Latitude,
-#                      marker={
-#                          'symbol': "pharmacy",
-#                          'size': 11
-#                      },
-#                      text=addy.MAPBOX_NAME))
-#
-# fig.update_layout(mapbox={
-#     'accesstoken': MAPBOX_TOKEN,
-#     'style': "light",
-#     'zoom': 5,
-#     "center": map_center
-# },
-#                   showlegend=False)
-# fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-# py.plot(fig, filename='sample_.html')
+py.plot(fig, filename=str(data_io.GRAPH_OUTPUT) + '/within_group_changed_recs_locations.html')
